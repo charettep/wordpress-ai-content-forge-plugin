@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_SLUG="ai-content-forge"
+ZIP_PATH="${ROOT_DIR}/${PLUGIN_SLUG}.zip"
+BUILD_DIR="${ROOT_DIR}/gutenberg/build"
+STAGE_DIR="$(mktemp -d)"
+PLUGIN_DIR="${STAGE_DIR}/${PLUGIN_SLUG}"
+
+cleanup() {
+    rm -rf "${STAGE_DIR}"
+}
+trap cleanup EXIT
+
+if [[ ! -f "${BUILD_DIR}/index.js" || ! -f "${BUILD_DIR}/index.asset.php" ]]; then
+    echo "Missing Gutenberg build assets in ${BUILD_DIR}. Run 'npm install && npm run build' in gutenberg/ first." >&2
+    exit 1
+fi
+
+mkdir -p "${PLUGIN_DIR}/gutenberg"
+rm -f "${ZIP_PATH}"
+
+cp "${ROOT_DIR}/ai-content-forge.php" "${PLUGIN_DIR}/"
+cp "${ROOT_DIR}/README.md" "${PLUGIN_DIR}/"
+cp -R "${ROOT_DIR}/admin" "${PLUGIN_DIR}/"
+cp -R "${ROOT_DIR}/assets" "${PLUGIN_DIR}/"
+cp -R "${ROOT_DIR}/includes" "${PLUGIN_DIR}/"
+cp -R "${ROOT_DIR}/gutenberg/build" "${PLUGIN_DIR}/gutenberg/"
+
+( cd "${STAGE_DIR}" && zip -qr "${ZIP_PATH}" "${PLUGIN_SLUG}" )
+
+echo "Built ${ZIP_PATH}"

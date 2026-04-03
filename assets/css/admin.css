@@ -1,0 +1,103 @@
+/* AI Content Forge — Admin Styles */
+
+:root {
+    --acf-primary:    #1e3a5f;
+    --acf-accent:     #f0a500;
+    --acf-surface:    #ffffff;
+    --acf-border:     #e0e5ec;
+    --acf-radius:     8px;
+    --acf-shadow:     0 2px 12px rgba(0,0,0,.07);
+    --acf-success:    #2e7d32;
+    --acf-error:      #c62828;
+}
+
+.acf-settings-wrap { max-width: 900px; }
+
+.acf-page-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.6rem;
+    color: var(--acf-primary);
+    margin-bottom: 24px;
+}
+
+.acf-logo { font-size: 1.8rem; }
+
+/* Cards */
+.acf-card {
+    background: var(--acf-surface);
+    border: 1px solid var(--acf-border);
+    border-radius: var(--acf-radius);
+    box-shadow: var(--acf-shadow);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+}
+
+.acf-card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--acf-primary);
+    margin-top: 0;
+    border-bottom: 2px solid var(--acf-accent);
+    padding-bottom: 8px;
+    display: inline-block;
+}
+
+/* Provider radio cards */
+.acf-provider-cards {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.acf-provider-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 24px;
+    border: 2px solid var(--acf-border);
+    border-radius: var(--acf-radius);
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    min-width: 120px;
+}
+
+.acf-provider-card:hover { border-color: var(--acf-accent); background: #fffbf0; }
+.acf-provider-card.selected { border-color: var(--acf-primary); background: #f0f4ff; }
+
+.acf-provider-card input[type="radio"] { display: none; }
+.acf-provider-icon { font-size: 1.6rem; }
+.acf-provider-name { font-size: .85rem; font-weight: 600; color: #333; }
+
+/* Test connection result */
+.acf-test-result {
+    display: inline-block;
+    margin-left: 10px;
+    font-weight: 600;
+    font-size: .9rem;
+}
+
+.acf-test-result.success { color: var(--acf-success); }
+.acf-test-result.error   { color: var(--acf-error); }
+
+/* Form table tweaks */
+.acf-card .form-table th {
+    padding-left: 0;
+    color: #444;
+    font-weight: 600;
+}
+
+/* Save button */
+#submit {
+    background: var(--acf-primary) !important;
+    border-color: var(--acf-primary) !important;
+    color: #fff !important;
+    padding: 8px 28px !important;
+    font-size: .95rem !important;
+    border-radius: 6px !important;
+}
+
+#submit:hover { background: #16304e !important; }
