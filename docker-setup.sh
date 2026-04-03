@@ -1,74 +1,166 @@
 #!/usr/bin/env bash
-# ─────────────────────────────────────────────────────────────────────────────
-# docker-setup.sh — One-time WordPress installation for local dev
-#
-# Run this ONCE after the first `docker compose up -d`:
-#   chmod +x docker-setup.sh && ./docker-setup.sh
-#
-# Safe to re-run: skips install if WordPress is already configured.
-# ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${ROOT_DIR}/.env"
+ENV_TEMPLATE="${ROOT_DIR}/.env.example"
+
+cd "${ROOT_DIR}"
+
+if [[ ! -t 0 ]]; then
+	echo "docker-setup.sh requires an interactive terminal." >&2
+	exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+	echo "Docker is required but was not found in PATH." >&2
+	exit 1
+fi
+
+if [[ -f "${ENV_TEMPLATE}" ]]; then
+	set -a
+	# shellcheck disable=SC1090
+	source "${ENV_TEMPLATE}"
+	set +a
+fi
+
+if [[ -f "${ENV_FILE}" ]]; then
+	set -a
+	# shellcheck disable=SC1090
+	source "${ENV_FILE}"
+	set +a
+fi
+
+prompt_var() {
+	local key="$1"
+	local label="$2"
+	local current_default="${!key:-}"
+	local input=""
+
+	read -r -p "${label} [${current_default}]: " input
+	printf -v "${key}" '%s' "${input:-${current_default}}"
+}
+
+escape_env_value() {
+	printf '%s' "$1" | sed -e 's/[\\$`"]/\\&/g'
+}
+
+write_env_file() {
+	cat > "${ENV_FILE}" <<EOF
+SITE_PORT="$(escape_env_value "${SITE_PORT}")"
+PMA_PORT="$(escape_env_value "${PMA_PORT}")"
+
+MARIADB_DATABASE="$(escape_env_value "${MARIADB_DATABASE}")"
+MARIADB_USER="$(escape_env_value "${MARIADB_USER}")"
+MARIADB_PASSWORD="$(escape_env_value "${MARIADB_PASSWORD}")"
+MARIADB_ROOT_PASSWORD="$(escape_env_value "${MARIADB_ROOT_PASSWORD}")"
+
+WORDPRESS_DB_HOST="$(escape_env_value "${WORDPRESS_DB_HOST}")"
+WORDPRESS_DB_NAME="$(escape_env_value "${WORDPRESS_DB_NAME}")"
+WORDPRESS_DB_USER="$(escape_env_value "${WORDPRESS_DB_USER}")"
+WORDPRESS_DB_PASSWORD="$(escape_env_value "${WORDPRESS_DB_PASSWORD}")"
+
+PMA_HOST="$(escape_env_value "${PMA_HOST}")"
+PMA_USER="$(escape_env_value "${PMA_USER}")"
+PMA_PASSWORD="$(escape_env_value "${PMA_PASSWORD}")"
+
+WP_ADMIN_USERNAME="$(escape_env_value "${WP_ADMIN_USERNAME}")"
+WP_ADMIN_PASSWORD="$(escape_env_value "${WP_ADMIN_PASSWORD}")"
+WP_ADMIN_EMAIL="$(escape_env_value "${WP_ADMIN_EMAIL}")"
+WP_SITE_TITLE="$(escape_env_value "${WP_SITE_TITLE}")"
+WP_BLOG_DESCRIPTION="$(escape_env_value "${WP_BLOG_DESCRIPTION}")"
+EOF
+}
+
+prompt_var "SITE_PORT" "WordPress site port"
+prompt_var "PMA_PORT" "phpMyAdmin port"
+prompt_var "MARIADB_DATABASE" "MariaDB database name"
+prompt_var "MARIADB_USER" "MariaDB application user"
+prompt_var "MARIADB_PASSWORD" "MariaDB application password"
+prompt_var "MARIADB_ROOT_PASSWORD" "MariaDB root password"
+prompt_var "WORDPRESS_DB_HOST" "WordPress database host"
+prompt_var "WORDPRESS_DB_NAME" "WordPress database name"
+prompt_var "WORDPRESS_DB_USER" "WordPress database user"
+prompt_var "WORDPRESS_DB_PASSWORD" "WordPress database password"
+prompt_var "PMA_HOST" "phpMyAdmin database host"
+prompt_var "PMA_USER" "phpMyAdmin username"
+prompt_var "PMA_PASSWORD" "phpMyAdmin password"
+prompt_var "WP_ADMIN_USERNAME" "WordPress admin username"
+prompt_var "WP_ADMIN_PASSWORD" "WordPress admin password"
+prompt_var "WP_ADMIN_EMAIL" "WordPress admin email"
+prompt_var "WP_SITE_TITLE" "WordPress site title"
+prompt_var "WP_BLOG_DESCRIPTION" "WordPress blog description"
+
+write_env_file
+
+set -a
+# shellcheck disable=SC1090
+source "${ENV_FILE}"
+set +a
+
 WP="docker compose run --rm wpcli wp"
+SITE_URL="http://localhost:${SITE_PORT}"
 
-# ── 1. Wait for WordPress container to be healthy ─────────────────────────────
-echo "⏳  Waiting for WordPress to be ready..."
-until docker compose exec -T wordpress curl -sf http://localhost/wp-login.php > /dev/null 2>&1; do
-  printf "."
-  sleep 3
+echo "Starting containers with values from ${ENV_FILE}..."
+docker compose up -d
+
+echo "Waiting for WordPress to be ready..."
+until docker compose exec -T wordpress curl -sf http://localhost/wp-login.php >/dev/null 2>&1; do
+	printf "."
+	sleep 3
 done
-echo " ✓"
+echo " ready."
 
-# ── 2. Install WordPress (idempotent) ─────────────────────────────────────────
-if $WP core is-installed 2>/dev/null; then
-  echo "✓  WordPress already installed — skipping core install."
+if ${WP} core is-installed >/dev/null 2>&1; then
+	echo "WordPress is already installed. Skipping core install."
 else
-  echo "📦  Installing WordPress core..."
-  $WP core install \
-    --url="http://localhost:8082" \
-    --title="AI Content Forge Dev" \
-    --admin_user=admin \
-    --admin_password=password \
-    --admin_email=dev@dev.local \
-    --skip-email
-  echo "✓  Core installed."
+	echo "Installing WordPress core..."
+	${WP} core install \
+		--url="${SITE_URL}" \
+		--title="${WP_SITE_TITLE}" \
+		--admin_user="${WP_ADMIN_USERNAME}" \
+		--admin_password="${WP_ADMIN_PASSWORD}" \
+		--admin_email="${WP_ADMIN_EMAIL}" \
+		--skip-email
+	echo "WordPress core installed."
 fi
 
-# ── 3. Activate the plugin ────────────────────────────────────────────────────
-echo "🔌  Activating plugin..."
-$WP plugin activate ai-content-forge
-echo "✓  Plugin active."
-
-# ── 4. Nice-to-have tweaks for local dev ─────────────────────────────────────
-$WP rewrite structure '/%postname%/' --hard
-$WP option update blogdescription "Local dev instance"
-
-# Create a test post to edit in Gutenberg
-POST_ID=$($WP post create \
-  --post_title="Test post for AI Content Forge" \
-  --post_status=draft \
-  --post_type=post \
-  --porcelain 2>/dev/null || echo "")
-if [ -n "$POST_ID" ]; then
-  echo "✓  Draft post created (ID: $POST_ID)."
+if ${WP} plugin is-active ai-content-forge >/dev/null 2>&1; then
+	echo "AI Content Forge is already active."
+else
+	echo "Activating AI Content Forge..."
+	${WP} plugin activate ai-content-forge
 fi
 
-# ── 5. Done ───────────────────────────────────────────────────────────────────
+${WP} rewrite structure '/%postname%/' --hard >/dev/null
+${WP} option update blogdescription "${WP_BLOG_DESCRIPTION}" >/dev/null
+
+POST_ID="$(
+	${WP} post create \
+		--post_title="AI Content Forge Test Post" \
+		--post_status=draft \
+		--post_type=post \
+		--porcelain 2>/dev/null || true
+)"
+
+if [[ -n "${POST_ID}" ]]; then
+	echo "Created draft post ${POST_ID} for editor testing."
+fi
+
 cat <<EOF
 
-╔══════════════════════════════════════════════════════════╗
-║  ✅  Local WordPress ready!                              ║
-╠══════════════════════════════════════════════════════════╣
-║  Site:       http://localhost:8082                       ║
-║  Admin:      http://localhost:8082/wp-admin              ║
-║  Login:      admin / password                            ║
-║  phpMyAdmin: http://localhost:8081                       ║
-╠══════════════════════════════════════════════════════════╣
-║  Plugin settings:                                        ║
-║  http://localhost:8082/wp-admin/admin.php?page=ai-content-forge
-╚══════════════════════════════════════════════════════════╝
+WordPress is ready.
 
-Tip: keep the Gutenberg watcher running for live JS rebuilds:
-  docker run --rm -it -v "$PWD":/work -w /work/gutenberg \\
-    node:20 bash -lc 'npm install --package-lock=false --no-fund --no-audit && npm run start'
+Site: ${SITE_URL}
+Admin: ${SITE_URL}/wp-admin
+Login: ${WP_ADMIN_USERNAME} / ${WP_ADMIN_PASSWORD}
+phpMyAdmin: http://localhost:${PMA_PORT}
+Plugin settings: ${SITE_URL}/wp-admin/options-general.php?page=ai-content-forge
+
+The active Docker configuration is saved in:
+  ${ENV_FILE}
+
+For later runs:
+  docker compose up -d
+  docker compose down
 EOF

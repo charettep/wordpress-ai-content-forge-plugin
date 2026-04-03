@@ -37,17 +37,6 @@ Use the packaged zip if you just want to install the plugin in WordPress.
 4. Click `Install Now`, then `Activate Plugin`.
 5. Open `Settings -> AI Content Forge` and configure at least one provider.
 
-### WordPress Playground
-
-This plugin can be installed in WordPress Playground with the same upload flow:
-
-1. Open your Playground site.
-2. Go to `Plugins -> Add Plugin -> Upload Plugin`.
-3. Upload the versioned plugin archive.
-4. Activate the plugin.
-
-If you hit a fatal error while activating an older package, use `v2.0.1` or later. Earlier broken archives omitted required admin files from the zip.
-
 ## Build From Source
 
 Clone the repo and build the Gutenberg assets before packaging a release.
@@ -89,30 +78,28 @@ wp-content/plugins/ai-content-forge/ai-content-forge.php
 
 ## Docker Development
 
-This repo includes a self-hosted WordPress dev stack in `docker-compose.yml` and `docker-setup.sh`.
+This repo includes a Docker-based WordPress development stack.
 
-1. Start the containers:
-
-```bash
-docker compose up -d
-```
-
-2. Run the one-time installer:
+1. Run the interactive setup:
 
 ```bash
 ./docker-setup.sh
 ```
 
-3. Open WordPress:
+The setup script:
 
-- Site: `http://localhost:8082`
-- Admin: `http://localhost:8082/wp-admin`
-- Login: `admin` / `password`
-- phpMyAdmin: `http://localhost:8081`
+- prompts for database credentials, site ports, and WordPress admin details
+- writes those values to a local `.env`
+- starts the Compose stack
+- installs WordPress if needed
+- activates the plugin
 
 Notes:
 
-- The plugin repo is live-mounted into the container at `wp-content/plugins/ai-content-forge`, so PHP changes apply immediately.
+- `docker-compose.yml` reads values from `.env`, and `.env.example` shows the available variables.
+- The site URL is `http://localhost:<SITE_PORT>`.
+- The phpMyAdmin URL is `http://localhost:<PMA_PORT>`.
+- The plugin repo is live-mounted into the WordPress plugins directory, so PHP changes apply immediately.
 - Rebuild `gutenberg/build/` after changing `gutenberg/src/`.
 - `docker compose run --rm wpcli <command>` is available for WP-CLI tasks such as `plugin list` or `post list`.
 
@@ -143,7 +130,6 @@ Important:
 
 - `localhost` is resolved from the WordPress runtime, not from your browser tab.
 - In Docker, `localhost` means the container.
-- In Playground, Ollama connectivity is generally not a practical target unless the runtime can reach your Ollama host.
 
 ### Generation Defaults
 
@@ -393,7 +379,7 @@ If OpenAI or Claude connects successfully, the provider header will show `Connec
 - fixed `Meta Description` apply/save so `_acf_meta_description` is registered in REST and persists with the post
 - fixed blank-success OpenAI responses for `gpt-5` when the Responses API consumed `max_output_tokens` on reasoning without returning visible text
 - cleaned up Gutenberg sidebar warnings, lint issues, and build instructions for the current toolchain
-- documented the local Docker WordPress development workflow included in this repo
+- replaced hard-coded Docker ports and credentials with an interactive `.env`-driven setup flow
 
 ### `v2.2.0`
 

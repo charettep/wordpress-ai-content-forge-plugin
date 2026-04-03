@@ -1,11 +1,16 @@
 .DS_Store
 .idea/
 .vscode/
+.claude/
 *.log
 *.zip
+.env
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+codex-chat-log.txt
+AGENTS.md
+CLAUDE.md
 
 gutenberg/node_modules/
 

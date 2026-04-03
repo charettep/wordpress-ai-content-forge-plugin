@@ -1,37 +1,29 @@
-# ── AI Content Forge — Local WordPress dev environment ─────────────────────────
+# AI Content Forge — local WordPress development stack
 #
-#  Services  │ URL / purpose
-#  ──────────┼──────────────────────────────────────────────────────────────────
-#  wordpress │ http://localhost:8082  WordPress + Apache
-#  db        │ MariaDB 11 (internal only)
-#  phpmyadmin│ http://localhost:8081  DB browser (optional)
-#  wpcli     │ docker compose run --rm wpcli <command>
-#
-#  First run:  docker compose up -d && ./docker-setup.sh
-#  Daily use:  docker compose up -d   (or preview_start wordpress-local)
-#  Teardown:   docker compose down -v   ← -v removes volumes (full reset)
+# Configuration is loaded from `.env`.
+# Use `./docker-setup.sh` for an interactive first-run setup.
 
 services:
-
-  # ── Database ──────────────────────────────────────────────────────────────────
   db:
     image: mariadb:11
     restart: unless-stopped
     volumes:
       - db_data:/var/lib/mysql
     environment:
-      MARIADB_DATABASE:      wordpress
-      MARIADB_USER:          wordpress
-      MARIADB_PASSWORD:      wordpress
-      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-wordpress}
+      MARIADB_USER: ${MARIADB_USER:-wordpress}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-change-me-db-password}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-change-me-root-password}
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost",
-             "-u", "wordpress", "-pwordpress"]
+      test:
+        [
+          "CMD-SHELL",
+          "mariadb-admin ping -h localhost -u\"${MARIADB_USER:-wordpress}\" -p\"${MARIADB_PASSWORD:-change-me-db-password}\""
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
 
-  # ── WordPress ─────────────────────────────────────────────────────────────────
   wordpress:
     image: wordpress:php8.2-apache
     depends_on:
@@ -39,23 +31,20 @@ services:
         condition: service_healthy
     restart: unless-stopped
     ports:
-      - "8082:80"
+      - "${SITE_PORT:-8080}:80"
     environment:
-      WORDPRESS_DB_HOST:     db
-      WORDPRESS_DB_USER:     wordpress
-      WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME:     wordpress
-      WORDPRESS_DEBUG:       "1"
-      WORDPRESS_DEBUG_LOG:   "1"
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST:-db}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wordpress}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-change-me-db-password}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
+      WORDPRESS_DEBUG: "1"
+      WORDPRESS_DEBUG_LOG: "1"
       WORDPRESS_DEBUG_DISPLAY: "0"
-      # SCRIPT_DEBUG forces un-minified core JS/CSS — useful for sidebar debugging
       WORDPRESS_CONFIG_EXTRA: |
         define('SCRIPT_DEBUG', true);
         define('SAVEQUERIES', false);
     volumes:
-      # WordPress core files live in a named volume so upgrades persist
       - wp_core:/var/www/html
-      # Plugin is live-mounted — changes to PHP/CSS/built JS are instant
       - .:/var/www/html/wp-content/plugins/ai-content-forge
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost/wp-login.php"]
@@ -64,10 +53,6 @@ services:
       retries: 12
       start_period: 20s
 
-  # ── WP-CLI (run-once helper) ──────────────────────────────────────────────────
-  # Usage:  docker compose run --rm wpcli <wp subcommand>
-  # e.g.:   docker compose run --rm wpcli plugin list
-  #         docker compose run --rm wpcli option get siteurl
   wpcli:
     image: wordpress:cli
     depends_on:
@@ -76,25 +61,24 @@ services:
     volumes:
       - wp_core:/var/www/html
       - .:/var/www/html/wp-content/plugins/ai-content-forge
-    user: "33:33"           # www-data — matches Apache; avoids root-owned files
+    user: "33:33"
     environment:
-      WORDPRESS_DB_HOST:     db
-      WORDPRESS_DB_USER:     wordpress
-      WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME:     wordpress
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST:-db}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wordpress}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-change-me-db-password}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
 
-  # ── phpMyAdmin (optional — comment out if unwanted) ────────────────────────────
   phpmyadmin:
     image: phpmyadmin:latest
     depends_on:
       - db
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "${PMA_PORT:-8081}:80"
     environment:
-      PMA_HOST: db
-      PMA_USER: wordpress
-      PMA_PASSWORD: wordpress
+      PMA_HOST: ${PMA_HOST:-db}
+      PMA_USER: ${PMA_USER:-wordpress}
+      PMA_PASSWORD: ${PMA_PASSWORD:-change-me-db-password}
 
 volumes:
   db_data:
