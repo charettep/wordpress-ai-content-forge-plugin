@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.4.5`.
+The current packaged release is `v2.4.6`.
 
 ## Features
 
@@ -101,6 +101,7 @@ Notes:
 
 - `docker-compose.yml` reads values from `.env`, and `.env.example` shows the available variables.
 - The site URL is `http://localhost:<SITE_PORT>`.
+- The site auto-configures for Cloudflare Tunnel (reverse proxy) deployments by detecting X-Forwarded-Proto headers and forcing the site URL to `https://ai-content-forge.charettep.com`.
 - The phpMyAdmin URL is `http://localhost:<PMA_PORT>`.
 - The plugin repo is mounted into the containers as a read-only workspace at `/workspace/ai-content-forge`, not as the live plugin directory.
 - Build a new release archive and reinstall it to test updates cleanly:
@@ -428,6 +429,11 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.4.6`
+
+- added Cloudflare Tunnel (reverse proxy) support in Docker environment: WordPress now correctly detects HTTPS headers and forces the site URL to the tunneled hostname (`https://ai-content-forge.charettep.com`)
+- improved Gutenberg REST API integration by passing full `restUrl` to the sidebar JavaScript, ensuring proper endpoint routing
 
 ### `v2.4.5`
 

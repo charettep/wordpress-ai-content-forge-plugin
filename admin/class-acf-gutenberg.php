@@ -73,6 +73,7 @@ class ACF_Gutenberg {
 
         wp_localize_script( 'acf-gutenberg', 'acfGutenberg', [
             'restNamespace' => ACF_Rest_API::REST_NAMESPACE,
+            'restUrl'       => rest_url( ACF_Rest_API::REST_NAMESPACE ),
             'nonce'         => wp_create_nonce( 'wp_rest' ),
             'settings'      => ACF_Settings::for_js(),
             'metaKeys'      => [
