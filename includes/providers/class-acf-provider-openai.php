@@ -65,7 +65,7 @@ class ACF_Provider_OpenAI extends ACF_Provider {
             throw new RuntimeException( 'OpenAI API key is not set.' );
         }
 
-        $model   = (string) ACF_Settings::get( 'openai_model', 'gpt-4o' );
+        $model   = $this->resolve_model();
         $api_key = (string) ACF_Settings::get( 'openai_api_key' );
 
         if ( self::should_use_responses_api( $model ) ) {
@@ -220,6 +220,23 @@ class ACF_Provider_OpenAI extends ACF_Provider {
         }
 
         return preg_match( '/^(gpt-|o1|o3|o4|chatgpt-)/i', $model ) === 1;
+    }
+
+    private function resolve_model(): string {
+        $model = trim( (string) ACF_Settings::get( 'openai_model', '' ) );
+
+        if ( '' !== $model ) {
+            return $model;
+        }
+
+        $models = $this->discover_models();
+        $model  = (string) ( $models[0]['id'] ?? '' );
+
+        if ( '' === $model ) {
+            throw new RuntimeException( 'No OpenAI model is selected.' );
+        }
+
+        return $model;
     }
 
     private static function should_retry_empty_responses_output( array $data, string $model ): bool {

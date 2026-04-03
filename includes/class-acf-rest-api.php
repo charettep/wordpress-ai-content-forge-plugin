@@ -54,10 +54,13 @@ class ACF_Rest_API {
             'args'                => [
                 'provider' => [
                     'required'          => true,
-                    'validate_callback' => fn( $v ) => in_array( $v, [ 'claude', 'openai' ], true ),
+                    'validate_callback' => fn( $v ) => in_array( $v, ACF_Settings::PROVIDERS, true ),
                 ],
                 'api_key' => [
-                    'required' => true,
+                    'default' => '',
+                ],
+                'base_url' => [
+                    'default' => '',
                 ],
                 'current_model' => [
                     'default' => '',
@@ -132,23 +135,36 @@ class ACF_Rest_API {
 
     public static function handle_sync_provider( WP_REST_Request $request ): WP_REST_Response {
         $slug          = (string) $request->get_param( 'provider' );
-        $api_key       = trim( (string) $request->get_param( 'api_key' ) );
         $current_model = sanitize_text_field( (string) $request->get_param( 'current_model' ) );
+        $config        = [];
 
-        if ( '' === $api_key ) {
-            return new WP_REST_Response(
-                [ 'success' => false, 'message' => 'API key is required.' ],
-                400
-            );
+        if ( 'ollama' === $slug ) {
+            $base_url = esc_url_raw( trim( (string) $request->get_param( 'base_url' ) ) );
+
+            if ( '' === $base_url ) {
+                return new WP_REST_Response(
+                    [ 'success' => false, 'message' => 'Base URL is required.' ],
+                    400
+                );
+            }
+
+            $config['ollama_url'] = $base_url;
+        } else {
+            $api_key = trim( (string) $request->get_param( 'api_key' ) );
+
+            if ( '' === $api_key ) {
+                return new WP_REST_Response(
+                    [ 'success' => false, 'message' => 'API key is required.' ],
+                    400
+                );
+            }
+
+            $config[ $slug . '_api_key' ] = $api_key;
         }
 
         try {
             $provider = ACF_Generator::get_provider( $slug );
-            $models   = $provider->discover_models(
-                [
-                    $slug . '_api_key' => $api_key,
-                ]
-            );
+            $models   = $provider->discover_models( $config );
 
             $model_ids = array_column( $models, 'id' );
             $selected  = in_array( $current_model, $model_ids, true )

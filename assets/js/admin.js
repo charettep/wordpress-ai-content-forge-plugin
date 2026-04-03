@@ -2,7 +2,7 @@
 /* global acfAdmin, jQuery */
 jQuery( function ( $ ) {
     const { restUrl, nonce, i18n } = acfAdmin;
-    const syncableProviders = [ 'claude', 'openai' ];
+    const syncableProviders = [ 'claude', 'openai', 'ollama' ];
     const debounceTimers = {};
     const requestVersions = {};
 
@@ -104,6 +104,29 @@ jQuery( function ( $ ) {
         return $( '.acf-model-select[data-provider="' + slug + '"]' );
     }
 
+    function getProviderSyncInput( slug ) {
+        if ( 'ollama' === slug ) {
+            return $( '.acf-base-url-input[data-provider="' + slug + '"]' );
+        }
+
+        return $( '.acf-api-key-input[data-provider="' + slug + '"]' );
+    }
+
+    function resetProviderSelect( slug ) {
+        const $select = getProviderSelect( slug );
+        const placeholder = 'ollama' === slug
+            ? ( $select.data( 'placeholder' ) || i18n.enterBaseUrl )
+            : ( $select.data( 'placeholder' ) || i18n.enterApiKey );
+
+        $select.empty().append(
+            $( '<option />', {
+                value: '',
+                text: placeholder,
+                selected: true,
+            } )
+        );
+    }
+
     function setSelectOptions( $select, models, selectedModel ) {
         const current = selectedModel || $select.val() || '';
 
@@ -148,13 +171,15 @@ jQuery( function ( $ ) {
     }
 
     function syncProvider( slug ) {
-        const $input = $( '.acf-api-key-input[data-provider="' + slug + '"]' );
+        const $input = getProviderSyncInput( slug );
         const $select = getProviderSelect( slug );
-        const apiKey = String( $input.val() || '' ).trim();
+        const configValue = String( $input.val() || '' ).trim();
         const currentModel = String( $select.val() || '' ).trim();
 
-        if ( ! apiKey ) {
+        if ( ! configValue ) {
             setProviderStatus( slug, '' );
+            resetProviderSelect( slug );
+            updateTokenLimitHint();
             return;
         }
 
@@ -169,11 +194,14 @@ jQuery( function ( $ ) {
             method:      'POST',
             contentType: 'application/json',
             beforeSend:  function ( xhr ) { xhr.setRequestHeader( 'X-WP-Nonce', nonce ); },
-            data:        JSON.stringify( {
+            data:        JSON.stringify( Object.assign( {
                 provider: slug,
-                api_key: apiKey,
                 current_model: currentModel,
-            } ),
+            }, 'ollama' === slug ? {
+                base_url: configValue,
+            } : {
+                api_key: configValue,
+            } ) ),
         } )
         .done( function ( res ) {
             if ( requestVersion !== requestVersions[ slug ] ) {
@@ -201,12 +229,12 @@ jQuery( function ( $ ) {
     }
 
     // ── Claude / OpenAI live sync ────────────────────────────────────────────
-    $( '.acf-api-key-input' ).on( 'input', function () {
+    $( '.acf-api-key-input, .acf-base-url-input' ).on( 'input', function () {
         scheduleProviderSync( $( this ).data( 'provider' ) );
     } );
 
     syncableProviders.forEach( function ( slug ) {
-        const $input = $( '.acf-api-key-input[data-provider="' + slug + '"]' );
+        const $input = getProviderSyncInput( slug );
 
         if ( String( $input.val() || '' ).trim() ) {
             scheduleProviderSync( slug );
@@ -221,31 +249,4 @@ jQuery( function ( $ ) {
         updateTokenLimitHint();
     } );
 
-    // ── Manual test connection for providers that still expose a button ──────
-    $( '.acf-test-btn' ).on( 'click', function () {
-        const $btn    = $( this );
-        const slug    = $btn.data( 'provider' );
-        const $result = $( '#test-' + slug );
-
-        $btn.prop( 'disabled', true ).text( i18n.testing );
-        $result.text( '' ).removeClass( 'success error' );
-
-        $.ajax( {
-            url:         restUrl + '/test-provider',
-            method:      'POST',
-            contentType: 'application/json',
-            beforeSend:  function ( xhr ) { xhr.setRequestHeader( 'X-WP-Nonce', nonce ); },
-            data:        JSON.stringify( { provider: slug } ),
-        } )
-        .done( function ( res ) {
-            $result.text( i18n.success ).addClass( 'success' );
-        } )
-        .fail( function ( xhr ) {
-            const msg = xhr.responseJSON?.message || i18n.failed;
-            $result.text( i18n.failed + ': ' + msg ).addClass( 'error' );
-        } )
-        .always( function () {
-            $btn.prop( 'disabled', false ).text( i18n.testConnection );
-        } );
-    } );
 } );

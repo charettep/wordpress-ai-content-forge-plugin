@@ -44,10 +44,10 @@ class ACF_Admin {
                 'connected'        => __( 'Connected', 'ai-content-forge' ),
                 'failed'           => __( 'Connection failed', 'ai-content-forge' ),
                 'enterApiKey'      => __( 'Enter an API key to load models', 'ai-content-forge' ),
+                'enterBaseUrl'     => __( 'Enter a Base URL to load models', 'ai-content-forge' ),
                 'loadingModels'    => __( 'Loading available models…', 'ai-content-forge' ),
                 'noModels'         => __( 'No models returned for this API key', 'ai-content-forge' ),
-                'testConnection'   => __( 'Test Connection', 'ai-content-forge' ),
-                'testing'          => __( 'Testing…', 'ai-content-forge' ),
+                'noOllamaModels'   => __( 'No models returned by this Ollama server', 'ai-content-forge' ),
                 'generating'       => __( 'Generating…', 'ai-content-forge' ),
             ],
         ] );
@@ -116,7 +116,7 @@ class ACF_Admin {
                                         data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
                                         data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
                                         name="<?php echo esc_attr( $opt ); ?>[claude_model]">
-                                    <?php if ( ! empty( $settings['claude_model'] ) ) : ?>
+                                    <?php if ( ! empty( $settings['claude_api_key'] ) && ! empty( $settings['claude_model'] ) ) : ?>
                                         <option value="<?php echo esc_attr( $settings['claude_model'] ); ?>" selected>
                                             <?php echo esc_html( $settings['claude_model'] ); ?>
                                         </option>
@@ -156,7 +156,7 @@ class ACF_Admin {
                                         data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
                                         data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
                                         name="<?php echo esc_attr( $opt ); ?>[openai_model]">
-                                    <?php if ( ! empty( $settings['openai_model'] ) ) : ?>
+                                    <?php if ( ! empty( $settings['openai_api_key'] ) && ! empty( $settings['openai_model'] ) ) : ?>
                                         <option value="<?php echo esc_attr( $settings['openai_model'] ); ?>" selected>
                                             <?php echo esc_html( $settings['openai_model'] ); ?>
                                         </option>
@@ -172,33 +172,39 @@ class ACF_Admin {
 
                 <!-- ── Ollama ─────────────────────────────────────────── -->
                 <div class="acf-card acf-provider-section" id="section-ollama">
-                    <h2>🔵 <?php esc_html_e( 'Ollama (Local LLM)', 'ai-content-forge' ); ?></h2>
+                    <div class="acf-provider-header">
+                        <h2>🔵 <?php esc_html_e( 'Ollama (Local LLM)', 'ai-content-forge' ); ?></h2>
+                        <span class="acf-provider-status" id="status-ollama" aria-live="polite"></span>
+                    </div>
                     <table class="form-table" role="presentation">
                         <tr>
                             <th><?php esc_html_e( 'Base URL', 'ai-content-forge' ); ?></th>
                             <td>
-                                <input type="url" class="regular-text"
+                                <input type="url" class="regular-text acf-base-url-input"
+                                       data-provider="ollama"
                                        name="<?php echo esc_attr( $opt ); ?>[ollama_url]"
                                        value="<?php echo esc_attr( $settings['ollama_url'] ); ?>">
-                                <p class="description">Default: <code>http://localhost:11434</code></p>
+                                <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value.', 'ai-content-forge' ); ?> Default: <code>http://localhost:11434</code></p>
                             </td>
                         </tr>
                         <tr>
                             <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
                             <td>
-                                <input type="text" class="regular-text"
-                                       name="<?php echo esc_attr( $opt ); ?>[ollama_model]"
-                                       value="<?php echo esc_attr( $settings['ollama_model'] ); ?>">
-                                <p class="description">e.g. <code>llama3</code>, <code>mistral</code>, <code>gemma3</code></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <td>
-                                <button type="button" class="button acf-test-btn" data-provider="ollama">
-                                    <?php esc_html_e( 'Test Connection', 'ai-content-forge' ); ?>
-                                </button>
-                                <span class="acf-test-result" id="test-ollama"></span>
+                                <select class="regular-text acf-model-select"
+                                        data-provider="ollama"
+                                        data-placeholder="<?php esc_attr_e( 'Enter a Base URL to load models', 'ai-content-forge' ); ?>"
+                                        data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
+                                        data-empty-label="<?php esc_attr_e( 'No models returned by this Ollama server', 'ai-content-forge' ); ?>"
+                                        name="<?php echo esc_attr( $opt ); ?>[ollama_model]">
+                                    <?php if ( ! empty( $settings['ollama_url'] ) && ! empty( $settings['ollama_model'] ) ) : ?>
+                                        <option value="<?php echo esc_attr( $settings['ollama_model'] ); ?>" selected>
+                                            <?php echo esc_html( $settings['ollama_model'] ); ?>
+                                        </option>
+                                    <?php else : ?>
+                                        <option value="" selected><?php esc_html_e( 'Enter a Base URL to load models', 'ai-content-forge' ); ?></option>
+                                    <?php endif; ?>
+                                </select>
+                                <p class="description"><?php esc_html_e( 'Available Ollama models are loaded automatically from the Ollama tags API after the base URL is detected and validated.', 'ai-content-forge' ); ?></p>
                             </td>
                         </tr>
                     </table>

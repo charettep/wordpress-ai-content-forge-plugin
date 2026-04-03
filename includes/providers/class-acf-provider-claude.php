@@ -59,10 +59,12 @@ class ACF_Provider_Claude extends ACF_Provider {
             throw new RuntimeException( 'Claude API key is not set.' );
         }
 
+        $model = $this->resolve_model();
+
         $data = $this->http_post(
             self::API_URL,
             [
-                'model'       => ACF_Settings::get( 'claude_model', 'claude-sonnet-4-20250514' ),
+                'model'       => $model,
                 'max_tokens'  => $max_tokens,
                 'temperature' => $temperature,
                 'messages'    => [
@@ -77,5 +79,22 @@ class ACF_Provider_Claude extends ACF_Provider {
         );
 
         return $data['content'][0]['text'] ?? '';
+    }
+
+    private function resolve_model(): string {
+        $model = trim( (string) ACF_Settings::get( 'claude_model', '' ) );
+
+        if ( '' !== $model ) {
+            return $model;
+        }
+
+        $models = $this->discover_models();
+        $model  = (string) ( $models[0]['id'] ?? '' );
+
+        if ( '' === $model ) {
+            throw new RuntimeException( 'No Claude model is selected.' );
+        }
+
+        return $model;
     }
 }

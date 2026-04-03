@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.3.2`.
+The current packaged release is `v2.3.3`.
 
 ## Features
 
@@ -17,8 +17,8 @@ The current packaged release is `v2.3.2`.
 - Choose a global default provider
 - Override the provider per generation run
 - Control shared generation defaults such as `max_tokens` and `temperature`
-- Auto-check OpenAI and Claude connectivity from wp-admin as soon as an API key is present
-- Auto-load available OpenAI and Claude models into a dropdown after a successful connection check
+- Auto-check OpenAI, Claude, and Ollama connectivity from wp-admin as soon as the required API key or base URL is present
+- Auto-load available provider models into a dropdown after a successful connection check
 
 ## Requirements
 
@@ -31,7 +31,7 @@ The current packaged release is `v2.3.2`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.3.2.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.3.3.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -100,6 +100,7 @@ Notes:
 - The site URL is `http://localhost:<SITE_PORT>`.
 - The phpMyAdmin URL is `http://localhost:<PMA_PORT>`.
 - The plugin repo is live-mounted into the WordPress plugins directory, so PHP changes apply immediately.
+- When Ollama is running on the Docker host at `127.0.0.1:11434`, the bundled `ollama-proxy` service exposes it to containerized PHP at `host.docker.internal:${OLLAMA_PROXY_PORT}`.
 - Rebuild `gutenberg/build/` after changing `gutenberg/src/`.
 - `docker compose run --rm wpcli <command>` is available for WP-CLI tasks such as `plugin list` or `post list`.
 
@@ -114,22 +115,23 @@ Used whenever the generator UI does not specify a provider override.
 ### Anthropic Claude
 
 - `API Key`: Anthropic API key
-- `Model`: automatically populated from the Anthropic Models API after the API key is detected and validated
+- `Model`: left blank until an API key is provided, then automatically populated from the Anthropic Models API after the key is detected and validated
 
 ### OpenAI
 
 - `API Key`: OpenAI API key
-- `Model`: automatically populated from the OpenAI Models API after the API key is detected and validated
+- `Model`: left blank until an API key is provided, then automatically populated from the OpenAI Models API after the key is detected and validated
 
 ### Ollama
 
 - `Base URL`: defaults to `http://localhost:11434`
-- `Model`: defaults to `llama3`
+- `Model`: left blank until the Ollama server is reached, then automatically populated from the Ollama tags API
 
 Important:
 
 - `localhost` is resolved from the WordPress runtime, not from your browser tab.
 - In Docker, `localhost` means the container.
+- When this plugin runs in the bundled Docker stack and the Ollama Base URL is `http://localhost:11434`, the backend automatically retries against the Docker host bridge exposed by `ollama-proxy`.
 
 ### Generation Defaults
 
@@ -139,10 +141,10 @@ Important:
 ### Live Provider Status
 
 - Anthropic Claude and OpenAI are checked automatically after the API key field becomes non-empty
+- Ollama is checked automatically after the Base URL field becomes non-empty
 - a green `Connected` status appears beside the provider heading after a successful check
 - the `Model` dropdown is refreshed with the models returned by that provider API
 - the selected model becomes the saved active model used for later generation after you click `Save Settings`
-- Ollama still uses a manual base URL and model entry because it does not use an API key flow
 
 ## User Guide
 
@@ -280,8 +282,9 @@ Parameters:
 
 | Parameter | Required | Notes |
 | --- | --- | --- |
-| `provider` | yes | `claude` or `openai` |
-| `api_key` | yes | unsaved API key currently typed in the form |
+| `provider` | yes | `claude`, `openai`, or `ollama` |
+| `api_key` | conditional | required for `claude` and `openai`; unsaved API key currently typed in the form |
+| `base_url` | conditional | required for `ollama`; unsaved base URL currently typed in the form |
 | `current_model` | no | currently selected or previously saved model |
 
 ### `GET /providers`
@@ -305,7 +308,7 @@ The script:
 
 - requires the Gutenberg build to exist first
 - stages the plugin under the correct runtime folder name: `ai-content-forge`
-- creates a clean versioned archive such as `ai-content-forge-v2.3.2.zip`
+- creates a clean versioned archive such as `ai-content-forge-v2.3.3.zip`
 - refuses to overwrite an existing archive for the same version
 - excludes development-only directories such as `node_modules`
 
@@ -366,13 +369,20 @@ Check:
 - outbound network access from the WordPress runtime
 - Ollama reachability from the PHP runtime
 
-If OpenAI or Claude connects successfully, the provider header will show `Connected` and the `Model` field will switch to a populated dropdown.
+If OpenAI, Claude, or Ollama connects successfully, the provider header will show `Connected` and the `Model` field will switch to a populated dropdown.
 
 ### Generated HTML is not block-native
 
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.3.3`
+
+- switched Ollama wp-admin settings to the same live connection and model-discovery flow used by OpenAI and Claude
+- removed hardcoded default model placeholders so Claude and OpenAI stay blank until an API key is present, and Ollama stays blank until a reachable server returns models
+- added Ollama model discovery through `/api/tags` plus Docker-aware backend fallbacks for host-local Ollama servers
+- added Docker compose support for container-to-host Ollama access through `host.docker.internal` and the bundled `ollama-proxy` bridge
 
 ### `v2.3.2`
 

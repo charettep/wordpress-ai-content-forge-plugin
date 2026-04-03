@@ -10,11 +10,11 @@ class ACF_Settings {
     const DEFAULTS = [
         'default_provider'  => 'claude',
         'claude_api_key'    => '',
-        'claude_model'      => 'claude-sonnet-4-20250514',
+        'claude_model'      => '',
         'openai_api_key'    => '',
-        'openai_model'      => 'gpt-4o',
+        'openai_model'      => '',
         'ollama_url'        => 'http://localhost:11434',
-        'ollama_model'      => 'llama3',
+        'ollama_model'      => '',
         'max_tokens'        => 1500,
         'temperature'       => 0.7,
     ];
@@ -54,11 +54,17 @@ class ACF_Settings {
             $clean['default_provider'] = $input['default_provider'];
         }
         $clean['claude_api_key']  = sanitize_text_field( $input['claude_api_key'] ?? '' );
-        $clean['claude_model']    = sanitize_text_field( $input['claude_model'] ?? 'claude-sonnet-4-20250514' );
+        $clean['claude_model']    = '' === $clean['claude_api_key']
+            ? ''
+            : sanitize_text_field( $input['claude_model'] ?? '' );
         $clean['openai_api_key']  = sanitize_text_field( $input['openai_api_key'] ?? '' );
-        $clean['openai_model']    = sanitize_text_field( $input['openai_model'] ?? 'gpt-4o' );
+        $clean['openai_model']    = '' === $clean['openai_api_key']
+            ? ''
+            : sanitize_text_field( $input['openai_model'] ?? '' );
         $clean['ollama_url']      = esc_url_raw( $input['ollama_url'] ?? 'http://localhost:11434' );
-        $clean['ollama_model']    = sanitize_text_field( $input['ollama_model'] ?? 'llama3' );
+        $clean['ollama_model']    = '' === $clean['ollama_url']
+            ? ''
+            : sanitize_text_field( $input['ollama_model'] ?? '' );
         $clean['max_tokens']      = absint( $input['max_tokens'] ?? 1500 );
         $clean['temperature']     = min( 2.0, max( 0.0, (float) ( $input['temperature'] ?? 0.7 ) ) );
 
