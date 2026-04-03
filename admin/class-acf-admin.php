@@ -40,10 +40,15 @@ class ACF_Admin {
             'nonce'   => wp_create_nonce( 'wp_rest' ),
             'settings' => ACF_Settings::for_js(),
             'i18n' => [
-                'testing'   => __( 'Testing…', 'ai-content-forge' ),
-                'success'   => __( '✓ Connected', 'ai-content-forge' ),
-                'fail'      => __( '✗ Failed', 'ai-content-forge' ),
-                'generating'=> __( 'Generating…', 'ai-content-forge' ),
+                'checking'         => __( 'Checking…', 'ai-content-forge' ),
+                'connected'        => __( 'Connected', 'ai-content-forge' ),
+                'failed'           => __( 'Connection failed', 'ai-content-forge' ),
+                'enterApiKey'      => __( 'Enter an API key to load models', 'ai-content-forge' ),
+                'loadingModels'    => __( 'Loading available models…', 'ai-content-forge' ),
+                'noModels'         => __( 'No models returned for this API key', 'ai-content-forge' ),
+                'testConnection'   => __( 'Test Connection', 'ai-content-forge' ),
+                'testing'          => __( 'Testing…', 'ai-content-forge' ),
+                'generating'       => __( 'Generating…', 'ai-content-forge' ),
             ],
         ] );
     }
@@ -87,32 +92,39 @@ class ACF_Admin {
 
                 <!-- ── Claude ─────────────────────────────────────────── -->
                 <div class="acf-card acf-provider-section" id="section-claude">
-                    <h2>🟠 <?php esc_html_e( 'Anthropic Claude', 'ai-content-forge' ); ?></h2>
+                    <div class="acf-provider-header">
+                        <h2>🟠 <?php esc_html_e( 'Anthropic Claude', 'ai-content-forge' ); ?></h2>
+                        <span class="acf-provider-status" id="status-claude" aria-live="polite"></span>
+                    </div>
                     <table class="form-table" role="presentation">
                         <tr>
                             <th><?php esc_html_e( 'API Key', 'ai-content-forge' ); ?></th>
                             <td>
-                                <input type="password" class="regular-text"
+                                <input type="password" class="regular-text acf-api-key-input"
+                                       data-provider="claude"
                                        name="<?php echo esc_attr( $opt ); ?>[claude_api_key]"
                                        value="<?php echo esc_attr( $settings['claude_api_key'] ); ?>" autocomplete="off">
+                                <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value.', 'ai-content-forge' ); ?></p>
                             </td>
                         </tr>
                         <tr>
                             <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
                             <td>
-                                <input type="text" class="regular-text"
-                                       name="<?php echo esc_attr( $opt ); ?>[claude_model]"
-                                       value="<?php echo esc_attr( $settings['claude_model'] ); ?>">
-                                <p class="description">e.g. <code>claude-sonnet-4-20250514</code></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <td>
-                                <button type="button" class="button acf-test-btn" data-provider="claude">
-                                    <?php esc_html_e( 'Test Connection', 'ai-content-forge' ); ?>
-                                </button>
-                                <span class="acf-test-result" id="test-claude"></span>
+                                <select class="regular-text acf-model-select"
+                                        data-provider="claude"
+                                        data-placeholder="<?php esc_attr_e( 'Enter an API key to load models', 'ai-content-forge' ); ?>"
+                                        data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
+                                        data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
+                                        name="<?php echo esc_attr( $opt ); ?>[claude_model]">
+                                    <?php if ( ! empty( $settings['claude_model'] ) ) : ?>
+                                        <option value="<?php echo esc_attr( $settings['claude_model'] ); ?>" selected>
+                                            <?php echo esc_html( $settings['claude_model'] ); ?>
+                                        </option>
+                                    <?php else : ?>
+                                        <option value="" selected><?php esc_html_e( 'Enter an API key to load models', 'ai-content-forge' ); ?></option>
+                                    <?php endif; ?>
+                                </select>
+                                <p class="description"><?php esc_html_e( 'Available Claude models are loaded automatically from the Anthropic Models API.', 'ai-content-forge' ); ?></p>
                             </td>
                         </tr>
                     </table>
@@ -120,32 +132,39 @@ class ACF_Admin {
 
                 <!-- ── OpenAI ─────────────────────────────────────────── -->
                 <div class="acf-card acf-provider-section" id="section-openai">
-                    <h2>🟢 <?php esc_html_e( 'OpenAI', 'ai-content-forge' ); ?></h2>
+                    <div class="acf-provider-header">
+                        <h2>🟢 <?php esc_html_e( 'OpenAI', 'ai-content-forge' ); ?></h2>
+                        <span class="acf-provider-status" id="status-openai" aria-live="polite"></span>
+                    </div>
                     <table class="form-table" role="presentation">
                         <tr>
                             <th><?php esc_html_e( 'API Key', 'ai-content-forge' ); ?></th>
                             <td>
-                                <input type="password" class="regular-text"
+                                <input type="password" class="regular-text acf-api-key-input"
+                                       data-provider="openai"
                                        name="<?php echo esc_attr( $opt ); ?>[openai_api_key]"
                                        value="<?php echo esc_attr( $settings['openai_api_key'] ); ?>" autocomplete="off">
+                                <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value.', 'ai-content-forge' ); ?></p>
                             </td>
                         </tr>
                         <tr>
                             <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
                             <td>
-                                <input type="text" class="regular-text"
-                                       name="<?php echo esc_attr( $opt ); ?>[openai_model]"
-                                       value="<?php echo esc_attr( $settings['openai_model'] ); ?>">
-                                <p class="description">e.g. <code>gpt-4o</code>, <code>gpt-4o-mini</code></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <td>
-                                <button type="button" class="button acf-test-btn" data-provider="openai">
-                                    <?php esc_html_e( 'Test Connection', 'ai-content-forge' ); ?>
-                                </button>
-                                <span class="acf-test-result" id="test-openai"></span>
+                                <select class="regular-text acf-model-select"
+                                        data-provider="openai"
+                                        data-placeholder="<?php esc_attr_e( 'Enter an API key to load models', 'ai-content-forge' ); ?>"
+                                        data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
+                                        data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
+                                        name="<?php echo esc_attr( $opt ); ?>[openai_model]">
+                                    <?php if ( ! empty( $settings['openai_model'] ) ) : ?>
+                                        <option value="<?php echo esc_attr( $settings['openai_model'] ); ?>" selected>
+                                            <?php echo esc_html( $settings['openai_model'] ); ?>
+                                        </option>
+                                    <?php else : ?>
+                                        <option value="" selected><?php esc_html_e( 'Enter an API key to load models', 'ai-content-forge' ); ?></option>
+                                    <?php endif; ?>
+                                </select>
+                                <p class="description"><?php esc_html_e( 'Available OpenAI text-generation models are loaded automatically from the Models API.', 'ai-content-forge' ); ?></p>
                             </td>
                         </tr>
                     </table>
@@ -192,9 +211,11 @@ class ACF_Admin {
                         <tr>
                             <th><?php esc_html_e( 'Max Tokens', 'ai-content-forge' ); ?></th>
                             <td>
-                                <input type="number" min="100" max="4000" step="50"
+                                <input type="number" min="100" max="200000" step="50"
+                                       id="acf-max-tokens"
                                        name="<?php echo esc_attr( $opt ); ?>[max_tokens]"
                                        value="<?php echo esc_attr( $settings['max_tokens'] ); ?>">
+                                <p class="description" id="acf-token-limit-hint"></p>
                             </td>
                         </tr>
                         <tr>
