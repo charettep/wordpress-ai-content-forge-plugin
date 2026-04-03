@@ -3,13 +3,61 @@ defined( 'ABSPATH' ) || exit;
 
 class ACF_Provider_OpenAI extends ACF_Provider {
 
-    const API_URL = 'https://api.openai.com/v1/chat/completions';
+    const CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
+    const RESPONSES_API_URL = 'https://api.openai.com/v1/responses';
+    const MODELS_API_URL = 'https://api.openai.com/v1/models';
 
     public function id(): string    { return 'openai'; }
     public function label(): string { return 'OpenAI'; }
 
-    public function is_configured(): bool {
-        return ! empty( ACF_Settings::get( 'openai_api_key' ) );
+    public function is_configured( array $config = [] ): bool {
+        return '' !== trim( (string) $this->resolve_setting( 'openai_api_key', '', $config ) );
+    }
+
+    public function discover_models( array $config = [] ): array {
+        $api_key = trim( (string) $this->resolve_setting( 'openai_api_key', '', $config ) );
+
+        if ( '' === $api_key ) {
+            throw new RuntimeException( 'OpenAI API key is not set.' );
+        }
+
+        $data = $this->http_get(
+            self::MODELS_API_URL,
+            [
+                'Authorization' => 'Bearer ' . $api_key,
+            ]
+        );
+
+        $models = array_filter(
+            array_map(
+                static function ( array $item ): ?array {
+                    $id = (string) ( $item['id'] ?? '' );
+
+                    if ( '' === $id || ! self::is_supported_text_model( $id ) ) {
+                        return null;
+                    }
+
+                    return [
+                        'id'    => $id,
+                        'label' => $id,
+                    ];
+                },
+                $data['data'] ?? []
+            )
+        );
+
+        usort(
+            $models,
+            static function ( array $a, array $b ): int {
+                return strcasecmp( $a['id'], $b['id'] );
+            }
+        );
+
+        if ( empty( $models ) ) {
+            throw new RuntimeException( 'No supported text-generation models were returned for this API key.' );
+        }
+
+        return array_values( $models );
     }
 
     public function generate( string $prompt, int $max_tokens, float $temperature ): string {
@@ -17,22 +65,145 @@ class ACF_Provider_OpenAI extends ACF_Provider {
             throw new RuntimeException( 'OpenAI API key is not set.' );
         }
 
-        $data = $this->http_post(
-            self::API_URL,
-            [
-                'model'       => ACF_Settings::get( 'openai_model', 'gpt-4o' ),
-                'max_tokens'  => $max_tokens,
-                'temperature' => $temperature,
-                'messages'    => [
-                    [ 'role' => 'user', 'content' => $prompt ],
+        $model   = (string) ACF_Settings::get( 'openai_model', 'gpt-4o' );
+        $api_key = (string) ACF_Settings::get( 'openai_api_key' );
+
+        if ( self::should_use_responses_api( $model ) ) {
+            $body = [
+                'model'             => $model,
+                'input'             => $prompt,
+                'max_output_tokens' => $max_tokens,
+            ];
+
+            if ( self::supports_temperature( $model ) ) {
+                $body['temperature'] = $temperature;
+            }
+
+            $reasoning = self::build_reasoning_config( $model );
+            if ( ! empty( $reasoning ) ) {
+                $body['reasoning'] = $reasoning;
+            }
+
+            $data = $this->post_with_parameter_fallback(
+                self::RESPONSES_API_URL,
+                $body,
+                [
+                    'Authorization' => 'Bearer ' . $api_key,
+                    'Content-Type'  => 'application/json',
                 ],
+                'temperature'
+            );
+
+            return $this->extract_responses_text( $data );
+        }
+
+        $body = [
+            'model'       => $model,
+            'messages'    => [
+                [ 'role' => 'user', 'content' => $prompt ],
             ],
+        ];
+
+        if ( self::supports_temperature( $model ) ) {
+            $body['temperature'] = $temperature;
+        }
+
+        if ( self::should_use_max_completion_tokens( $model ) ) {
+            $body['max_completion_tokens'] = $max_tokens;
+        } else {
+            $body['max_tokens'] = $max_tokens;
+        }
+
+        $data = $this->post_with_parameter_fallback(
+            self::CHAT_API_URL,
+            $body,
             [
-                'Authorization' => 'Bearer ' . ACF_Settings::get( 'openai_api_key' ),
+                'Authorization' => 'Bearer ' . $api_key,
                 'Content-Type'  => 'application/json',
-            ]
+            ],
+            'temperature'
         );
 
         return $data['choices'][0]['message']['content'] ?? '';
+    }
+
+    private function extract_responses_text( array $data ): string {
+        if ( ! empty( $data['output_text'] ) ) {
+            return trim( (string) $data['output_text'] );
+        }
+
+        $chunks = [];
+
+        foreach ( $data['output'] ?? [] as $output ) {
+            foreach ( $output['content'] ?? [] as $content ) {
+                if ( 'output_text' === ( $content['type'] ?? '' ) && ! empty( $content['text'] ) ) {
+                    $chunks[] = $content['text'];
+                }
+            }
+        }
+
+        return trim( implode( "\n\n", $chunks ) );
+    }
+
+    private static function build_reasoning_config( string $model ): array {
+        if ( self::is_gpt5_pro( $model ) ) {
+            return [ 'effort' => 'high' ];
+        }
+
+        if ( self::is_gpt5_family( $model ) ) {
+            return [ 'effort' => 'low' ];
+        }
+
+        return [];
+    }
+
+    private static function should_use_responses_api( string $model ): bool {
+        return preg_match( '/^(gpt-5|gpt-4\.1|gpt-4o|o1|o3|o4|chatgpt-4o)/i', $model ) === 1;
+    }
+
+    private static function should_use_max_completion_tokens( string $model ): bool {
+        return preg_match( '/^(gpt-5|o1|o3|o4)/i', $model ) === 1;
+    }
+
+    private static function supports_temperature( string $model ): bool {
+        return preg_match( '/^(gpt-5|o1|o3|o4)/i', $model ) !== 1;
+    }
+
+    private static function is_gpt5_family( string $model ): bool {
+        return preg_match( '/^gpt-5(?!-pro)/i', $model ) === 1;
+    }
+
+    private static function is_gpt5_pro( string $model ): bool {
+        return preg_match( '/^gpt-5(?:\.\d+)?-pro/i', $model ) === 1;
+    }
+
+    private static function is_supported_text_model( string $model ): bool {
+        if ( preg_match( '/(audio|image|tts|transcribe|embedding|search|moderation|realtime)/i', $model ) ) {
+            return false;
+        }
+
+        return preg_match( '/^(gpt-|o1|o3|o4|chatgpt-)/i', $model ) === 1;
+    }
+
+    private function post_with_parameter_fallback( string $url, array $body, array $headers, string $parameter ): array {
+        try {
+            return $this->http_post( $url, $body, $headers );
+        } catch ( RuntimeException $e ) {
+            if ( ! isset( $body[ $parameter ] ) ) {
+                throw $e;
+            }
+
+            if ( ! self::is_unsupported_parameter_error( $e->getMessage(), $parameter ) ) {
+                throw $e;
+            }
+
+            unset( $body[ $parameter ] );
+
+            return $this->http_post( $url, $body, $headers );
+        }
+    }
+
+    private static function is_unsupported_parameter_error( string $message, string $parameter ): bool {
+        return preg_match( "/unsupported parameter:\\s*'?" . preg_quote( $parameter, '/' ) . "'?/i", $message ) === 1;
     }
 }
