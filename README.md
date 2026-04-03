@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.2.0`.
+The current packaged release is `v2.3.2`.
 
 ## Features
 
@@ -31,7 +31,7 @@ The current packaged release is `v2.2.0`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.2.0.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.3.2.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -55,7 +55,7 @@ Clone the repo and build the Gutenberg assets before packaging a release.
 ```bash
 git clone https://github.com/charettep/wordpress-ai-content-forge-plugin.git
 cd wordpress-ai-content-forge-plugin/gutenberg
-npm install
+npm install --package-lock=false
 npm run build
 cd ..
 ./build-release.sh
@@ -86,6 +86,35 @@ The plugin directory name inside WordPress must be `ai-content-forge` so the mai
 ```text
 wp-content/plugins/ai-content-forge/ai-content-forge.php
 ```
+
+## Docker Development
+
+This repo includes a self-hosted WordPress dev stack in `docker-compose.yml` and `docker-setup.sh`.
+
+1. Start the containers:
+
+```bash
+docker compose up -d
+```
+
+2. Run the one-time installer:
+
+```bash
+./docker-setup.sh
+```
+
+3. Open WordPress:
+
+- Site: `http://localhost:8082`
+- Admin: `http://localhost:8082/wp-admin`
+- Login: `admin` / `password`
+- phpMyAdmin: `http://localhost:8081`
+
+Notes:
+
+- The plugin repo is live-mounted into the container at `wp-content/plugins/ai-content-forge`, so PHP changes apply immediately.
+- Rebuild `gutenberg/build/` after changing `gutenberg/src/`.
+- `docker compose run --rm wpcli <command>` is available for WP-CLI tasks such as `plugin list` or `post list`.
 
 ## Configuration
 
@@ -180,12 +209,12 @@ This is destructive to the current editor canvas, so generate carefully if the p
 #### Meta Description
 
 - Generates a meta description
-- Applies the result to `_acf_meta_description` in editor state
+- Applies the result to `_acf_meta_description` post meta in the editor and saves it with the post
 
 Important:
 
-- this plugin does not register or display that meta key on the frontend by itself
-- you need a companion integration, SEO plugin mapping, or custom code if you want the meta description persisted and surfaced elsewhere
+- this plugin stores that value in post meta and exposes it in the editor / REST API
+- it does not display that meta key on the frontend by itself, so you still need theme code or an SEO integration if you want it surfaced elsewhere
 
 ## Prompt Behavior
 
@@ -290,7 +319,7 @@ The script:
 
 - requires the Gutenberg build to exist first
 - stages the plugin under the correct runtime folder name: `ai-content-forge`
-- creates a clean versioned archive such as `ai-content-forge-v2.2.0.zip`
+- creates a clean versioned archive such as `ai-content-forge-v2.3.2.zip`
 - refuses to overwrite an existing archive for the same version
 - excludes development-only directories such as `node_modules`
 
@@ -338,7 +367,7 @@ If they are missing, rebuild with:
 
 ```bash
 cd gutenberg
-npm install
+npm install --package-lock=false
 npm run build
 ```
 
@@ -358,6 +387,13 @@ If OpenAI or Claude connects successfully, the provider header will show `Connec
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.3.2`
+
+- fixed `Meta Description` apply/save so `_acf_meta_description` is registered in REST and persists with the post
+- fixed blank-success OpenAI responses for `gpt-5` when the Responses API consumed `max_output_tokens` on reasoning without returning visible text
+- cleaned up Gutenberg sidebar warnings, lint issues, and build instructions for the current toolchain
+- documented the local Docker WordPress development workflow included in this repo
 
 ### `v2.2.0`
 

@@ -3,8 +3,38 @@ defined( 'ABSPATH' ) || exit;
 
 class ACF_Gutenberg {
 
+    const META_DESCRIPTION_KEY = '_acf_meta_description';
+
     public static function init(): void {
+        add_action( 'init', [ self::class, 'register_editor_meta' ], 20 );
         add_action( 'enqueue_block_editor_assets', [ self::class, 'enqueue_assets' ] );
+    }
+
+    public static function register_editor_meta(): void {
+        $post_types = get_post_types( [ 'show_in_rest' => true ], 'names' );
+
+        foreach ( $post_types as $post_type ) {
+            if ( ! post_type_supports( $post_type, 'editor' ) || ! post_type_supports( $post_type, 'custom-fields' ) ) {
+                continue;
+            }
+
+            register_post_meta(
+                $post_type,
+                self::META_DESCRIPTION_KEY,
+                [
+                    'type'              => 'string',
+                    'single'            => true,
+                    'default'           => '',
+                    'sanitize_callback' => 'sanitize_text_field',
+                    'show_in_rest'      => true,
+                    'auth_callback'     => [ self::class, 'can_edit_meta' ],
+                ]
+            );
+        }
+    }
+
+    public static function can_edit_meta( $_allowed, string $_meta_key, int $post_id ): bool {
+        return current_user_can( 'edit_post', $post_id );
     }
 
     public static function enqueue_assets(): void {
@@ -45,6 +75,9 @@ class ACF_Gutenberg {
             'restNamespace' => ACF_Rest_API::REST_NAMESPACE,
             'nonce'         => wp_create_nonce( 'wp_rest' ),
             'settings'      => ACF_Settings::for_js(),
+            'metaKeys'      => [
+                'metaDescription' => self::META_DESCRIPTION_KEY,
+            ],
             'types'         => ACF_Generator::TYPES,
             'typeLabels'    => [
                 'post_content'     => __( 'Post Content',      'ai-content-forge' ),

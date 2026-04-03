@@ -13,7 +13,7 @@ When completing any user-requested plugin update, execute the full release end-t
    - Host Node is too new — always use the Docker container:
      ```bash
      docker run --rm -v "$PWD":/work node:20 bash -lc \
-       'cp -R /work /tmp/b; cd /tmp/b/gutenberg; npm install --no-fund --no-audit; npm run build; cp -R build /work/gutenberg/'
+       'cp -R /work /tmp/b; cd /tmp/b/gutenberg; npm install --package-lock=false --no-fund --no-audit; npm run build; cp -R build /work/gutenberg/'
      ```
 3. **PHP syntax check** every modified `.php` file:
    ```bash

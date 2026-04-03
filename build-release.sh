@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ ! -f "${BUILD_DIR}/index.js" || ! -f "${BUILD_DIR}/index.asset.php" ]]; then
-    echo "Missing Gutenberg build assets in ${BUILD_DIR}. Run 'npm install && npm run build' in gutenberg/ first." >&2
+    echo "Missing Gutenberg build assets in ${BUILD_DIR}. Run 'npm install --package-lock=false && npm run build' in gutenberg/ first." >&2
     exit 1
 fi
 

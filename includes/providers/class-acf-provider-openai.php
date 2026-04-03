@@ -84,17 +84,12 @@ class ACF_Provider_OpenAI extends ACF_Provider {
                 $body['reasoning'] = $reasoning;
             }
 
-            $data = $this->post_with_parameter_fallback(
-                self::RESPONSES_API_URL,
-                $body,
-                [
-                    'Authorization' => 'Bearer ' . $api_key,
-                    'Content-Type'  => 'application/json',
-                ],
-                'temperature'
-            );
+            $headers = [
+                'Authorization' => 'Bearer ' . $api_key,
+                'Content-Type'  => 'application/json',
+            ];
 
-            return $this->extract_responses_text( $data );
+            return $this->generate_responses_text( $body, $headers, $model );
         }
 
         $body = [
@@ -145,6 +140,48 @@ class ACF_Provider_OpenAI extends ACF_Provider {
         return trim( implode( "\n\n", $chunks ) );
     }
 
+    private function generate_responses_text( array $body, array $headers, string $model ): string {
+        $data = $this->post_with_parameter_fallback(
+            self::RESPONSES_API_URL,
+            $body,
+            $headers,
+            'temperature'
+        );
+
+        $text = $this->extract_responses_text( $data );
+
+        if ( '' !== $text ) {
+            return $text;
+        }
+
+        if ( self::should_retry_empty_responses_output( $data, $model ) ) {
+            $retry_body = $body;
+            $retry_body['max_output_tokens'] = max(
+                (int) ( $body['max_output_tokens'] ?? 0 ),
+                self::minimum_responses_retry_budget( $model )
+            );
+
+            if ( $retry_body['max_output_tokens'] !== (int) ( $body['max_output_tokens'] ?? 0 ) ) {
+                $retry_data = $this->post_with_parameter_fallback(
+                    self::RESPONSES_API_URL,
+                    $retry_body,
+                    $headers,
+                    'temperature'
+                );
+
+                $retry_text = $this->extract_responses_text( $retry_data );
+
+                if ( '' !== $retry_text ) {
+                    return $retry_text;
+                }
+
+                $data = $retry_data;
+            }
+        }
+
+        throw new RuntimeException( self::build_empty_responses_error( $data ) );
+    }
+
     private static function build_reasoning_config( string $model ): array {
         if ( self::is_gpt5_pro( $model ) ) {
             return [ 'effort' => 'high' ];
@@ -183,6 +220,28 @@ class ACF_Provider_OpenAI extends ACF_Provider {
         }
 
         return preg_match( '/^(gpt-|o1|o3|o4|chatgpt-)/i', $model ) === 1;
+    }
+
+    private static function should_retry_empty_responses_output( array $data, string $model ): bool {
+        return self::minimum_responses_retry_budget( $model ) > 0
+            && 'incomplete' === (string) ( $data['status'] ?? '' )
+            && 'max_output_tokens' === (string) ( $data['incomplete_details']['reason'] ?? '' );
+    }
+
+    private static function minimum_responses_retry_budget( string $model ): int {
+        if ( self::is_gpt5_family( $model ) || self::is_gpt5_pro( $model ) ) {
+            return 2048;
+        }
+
+        return 0;
+    }
+
+    private static function build_empty_responses_error( array $data ): string {
+        if ( 'incomplete' === (string) ( $data['status'] ?? '' ) && 'max_output_tokens' === (string) ( $data['incomplete_details']['reason'] ?? '' ) ) {
+            return 'OpenAI did not return visible text before hitting max_output_tokens. Increase Max Tokens and try again.';
+        }
+
+        return 'OpenAI returned an empty response.';
     }
 
     private function post_with_parameter_fallback( string $url, array $body, array $headers, string $parameter ): array {

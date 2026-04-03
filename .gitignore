@@ -8,3 +8,6 @@ yarn-debug.log*
 yarn-error.log*
 
 gutenberg/node_modules/
+
+# Docker local dev — never commit WP uploads or debug output
+wp-content/
