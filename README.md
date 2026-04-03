@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.4.1`.
+The current packaged release is `v2.4.5`.
 
 ## Features
 
@@ -19,6 +19,9 @@ The current packaged release is `v2.4.1`.
 - Control shared generation defaults such as `max_output_tokens`, `max_thinking_tokens`, and `temperature`
 - Auto-check OpenAI, Claude, and Ollama connectivity from wp-admin as soon as the required API key or base URL is present
 - Auto-load available provider models into a dropdown after a successful connection check
+- Streaming generation with real-time token delivery in the block editor
+- Run Usage panel: shows provider, model, token counts, and estimated USD cost after each generation run
+- Post Usage Totals panel: cumulative token and cost breakdown per provider for the current editing session
 
 ## Requirements
 
@@ -31,7 +34,7 @@ The current packaged release is `v2.4.1`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.4.1.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.4.5.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -177,10 +180,28 @@ Available controls:
 - `Tone`
 - `Language`
 
-After generation, the sidebar exposes:
+Generation streams tokens in real time from the provider into the `Result` panel. A `Stop` button appears during streaming. After generation completes, the sidebar exposes:
 
 - `Copy`
 - `Apply to Post`
+
+#### Run Usage
+
+The `Run Usage` panel is always visible below the Generate controls. It shows the token breakdown and estimated cost for the most recent generation run:
+
+- `Provider`: which provider answered the request
+- `Model`: the exact model used
+- `Input Tokens`: tokens consumed by the prompt
+- `Thinking Tokens`: reasoning tokens (where the provider exposes them separately)
+- `Output Tokens`: tokens in the generated answer
+- `Total Tokens`: combined input + output
+- `Cost (USD)`: estimated cost at current published pricing
+
+The panel displays a placeholder until the first generation run completes in the current page session.
+
+#### Post Usage Totals
+
+The `Post Usage Totals` panel (collapsed by default) accumulates token counts and cost across every generation run for the current post during the editing session, grouped by provider. This resets on page reload.
 
 ### What Each Content Type Does
 
@@ -266,6 +287,28 @@ Successful response:
   "result": "Generated text here"
 }
 ```
+
+### `POST /generate-stream`
+
+Same parameters as `POST /generate`. Returns a `text/event-stream` SSE response. The client receives:
+
+| Event | Payload |
+| --- | --- |
+| `start` | `{ "success": true }` |
+| `chunk` | `{ "text": "…" }` one or more times |
+| `usage` | `{ "provider", "model", "input_tokens", "thinking_tokens", "output_tokens", "total_tokens", "cost_usd" }` |
+| `done` | `{ "success": true, "usage": { … } }` |
+| `error` | `{ "success": false, "message": "…" }` |
+
+Falls back gracefully to `POST /generate` in environments where SSE streaming is unavailable.
+
+### `POST /generate-stop`
+
+Signals the server to cancel an active streaming generation for the current provider.
+
+| Parameter | Required | Notes |
+| --- | --- | --- |
+| `provider` | no | empty string uses the global default |
 
 ### `POST /test-provider`
 
@@ -385,6 +428,21 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.4.5`
+
+- fixed `Run Usage` panel not appearing in the Gutenberg sidebar: the v2.4.4 zip was packaged from a build where the panel was conditionally hidden until usage data arrived, but Claude never returned usage data; the panel now renders immediately with a placeholder and populates after each run
+- added `stream_generate()` to the Claude provider so token usage and estimated cost are returned after generation instead of an empty payload; pricing covers all current Claude 3 and Claude 4 model families
+- the `Run Usage` and `Post Usage Totals` panels are now fully functional for all three providers (Claude, OpenAI, Ollama)
+
+### `v2.4.4`
+
+- added streaming generation endpoint (`/generate-stream`) with real-time token delivery via SSE for all providers
+- added `generate-stop` REST endpoint for mid-stream cancellation from the block editor
+- added `Run Usage` panel to the Gutenberg sidebar showing per-run token counts and estimated cost
+- added `Post Usage Totals` panel to the Gutenberg sidebar accumulating cost across runs in the current session
+- added OpenAI real SSE streaming with per-event usage extraction and model-aware pricing
+- added Ollama streaming with token count reporting from the final stream event
 
 ### `v2.4.1`
 
