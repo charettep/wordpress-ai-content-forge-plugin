@@ -89,7 +89,7 @@ $ex_line
 Requirements:
 - Use proper heading hierarchy (H2, H3)
 - Include an engaging introduction and a clear conclusion
-- Aim for 600–900 words unless the topic requires more
+- Target roughly 600–900 words and keep each section concise
 - Output clean HTML suitable for the WordPress block editor (use <h2>, <h3>, <p>, <ul>/<ol>)
 - Do NOT include the post title as an H1 — WordPress outputs that separately
 - Do NOT wrap the output in code fences

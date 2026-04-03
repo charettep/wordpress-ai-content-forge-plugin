@@ -46,6 +46,25 @@ class ACF_Rest_API {
             ],
         ] );
 
+        // Sync provider connection state + model list from unsaved admin form inputs
+        register_rest_route( self::REST_NAMESPACE, '/sync-provider', [
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => [ self::class, 'handle_sync_provider' ],
+            'permission_callback' => [ self::class, 'check_manage_options_permission' ],
+            'args'                => [
+                'provider' => [
+                    'required'          => true,
+                    'validate_callback' => fn( $v ) => in_array( $v, [ 'claude', 'openai' ], true ),
+                ],
+                'api_key' => [
+                    'required' => true,
+                ],
+                'current_model' => [
+                    'default' => '',
+                ],
+            ],
+        ] );
+
         // Get available providers
         register_rest_route( self::REST_NAMESPACE, '/providers', [
             'methods'             => WP_REST_Server::READABLE,
@@ -56,6 +75,10 @@ class ACF_Rest_API {
 
     public static function check_permission(): bool {
         return current_user_can( 'edit_posts' );
+    }
+
+    public static function check_manage_options_permission(): bool {
+        return current_user_can( 'manage_options' );
     }
 
     public static function handle_generate( WP_REST_Request $request ): WP_REST_Response {
@@ -95,10 +118,58 @@ class ACF_Rest_API {
                     400
                 );
             }
-            $result = $provider->generate( 'Reply with exactly: OK', 10, 0.0 );
+            try {
+                $provider->discover_models();
+            } catch ( RuntimeException $e ) {
+                $provider->generate( 'Reply with exactly: OK', 10, 0.0 );
+            }
+
             return new WP_REST_Response( [ 'success' => true, 'message' => 'Connection successful.' ], 200 );
         } catch ( \Throwable $e ) {
             return new WP_REST_Response( [ 'success' => false, 'message' => $e->getMessage() ], 500 );
+        }
+    }
+
+    public static function handle_sync_provider( WP_REST_Request $request ): WP_REST_Response {
+        $slug          = (string) $request->get_param( 'provider' );
+        $api_key       = trim( (string) $request->get_param( 'api_key' ) );
+        $current_model = sanitize_text_field( (string) $request->get_param( 'current_model' ) );
+
+        if ( '' === $api_key ) {
+            return new WP_REST_Response(
+                [ 'success' => false, 'message' => 'API key is required.' ],
+                400
+            );
+        }
+
+        try {
+            $provider = ACF_Generator::get_provider( $slug );
+            $models   = $provider->discover_models(
+                [
+                    $slug . '_api_key' => $api_key,
+                ]
+            );
+
+            $model_ids = array_column( $models, 'id' );
+            $selected  = in_array( $current_model, $model_ids, true )
+                ? $current_model
+                : ( $model_ids[0] ?? '' );
+
+            return new WP_REST_Response(
+                [
+                    'success'        => true,
+                    'connected'      => true,
+                    'message'        => 'Connected',
+                    'models'         => $models,
+                    'selected_model' => $selected,
+                ],
+                200
+            );
+        } catch ( \Throwable $e ) {
+            return new WP_REST_Response(
+                [ 'success' => false, 'connected' => false, 'message' => $e->getMessage() ],
+                500
+            );
         }
     }
 

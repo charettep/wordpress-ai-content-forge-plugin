@@ -4,9 +4,9 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 
 - a settings screen under `Settings -> AI Content Forge`
 - a Gutenberg sidebar for on-demand generation inside the block editor
-- REST endpoints for generation and connection testing
+- REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.0.1`.
+The current packaged release is `v2.2.0`.
 
 ## Features
 
@@ -17,7 +17,8 @@ The current packaged release is `v2.0.1`.
 - Choose a global default provider
 - Override the provider per generation run
 - Control shared generation defaults such as `max_tokens` and `temperature`
-- Test provider connectivity from wp-admin
+- Auto-check OpenAI and Claude connectivity from wp-admin as soon as an API key is present
+- Auto-load available OpenAI and Claude models into a dropdown after a successful connection check
 
 ## Requirements
 
@@ -30,9 +31,9 @@ The current packaged release is `v2.0.1`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download `ai-content-forge.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.2.0.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
-3. Upload `ai-content-forge.zip`.
+3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
 5. Open `Settings -> AI Content Forge` and configure at least one provider.
 
@@ -42,7 +43,7 @@ This plugin can be installed in WordPress Playground with the same upload flow:
 
 1. Open your Playground site.
 2. Go to `Plugins -> Add Plugin -> Upload Plugin`.
-3. Upload `ai-content-forge.zip`.
+3. Upload the versioned plugin archive.
 4. Activate the plugin.
 
 If you hit a fatal error while activating an older package, use `v2.0.1` or later. Earlier broken archives omitted required admin files from the zip.
@@ -64,7 +65,7 @@ That produces:
 
 - `gutenberg/build/index.js`
 - `gutenberg/build/index.asset.php`
-- `ai-content-forge.zip`
+- `ai-content-forge-vX.Y.Z.zip`
 
 ## Local Development Install
 
@@ -97,12 +98,12 @@ Used whenever the generator UI does not specify a provider override.
 ### Anthropic Claude
 
 - `API Key`: Anthropic API key
-- `Model`: defaults to `claude-sonnet-4-20250514`
+- `Model`: automatically populated from the Anthropic Models API after the API key is detected and validated
 
 ### OpenAI
 
 - `API Key`: OpenAI API key
-- `Model`: defaults to `gpt-4o`
+- `Model`: automatically populated from the OpenAI Models API after the API key is detected and validated
 
 ### Ollama
 
@@ -120,9 +121,13 @@ Important:
 - `Max Tokens`: global token budget; shorter content types are capped lower internally
 - `Temperature`: global creativity control
 
-### Test Connection
+### Live Provider Status
 
-Each provider section includes a `Test Connection` button. This performs a real API request and will consume a small amount of provider usage.
+- Anthropic Claude and OpenAI are checked automatically after the API key field becomes non-empty
+- a green `Connected` status appears beside the provider heading after a successful check
+- the `Model` dropdown is refreshed with the models returned by that provider API
+- the selected model becomes the saved active model used for later generation after you click `Save Settings`
+- Ollama still uses a manual base URL and model entry because it does not use an API key flow
 
 ## User Guide
 
@@ -133,7 +138,7 @@ Use the settings screen to:
 - store provider credentials
 - choose the default provider
 - set baseline generation behavior
-- verify provider connectivity before editing content
+- confirm provider connectivity and choose the exact model before editing content
 
 ### Gutenberg Sidebar
 
@@ -157,7 +162,8 @@ After generation, the sidebar exposes:
 #### Post Content
 
 - Generates HTML intended for the block editor
-- Applies the result by replacing the editor content with a single `core/html` block
+- Applies the result by converting the generated HTML into native Gutenberg blocks such as paragraphs, headings, lists, and code blocks when possible
+- Falls back to a single `Custom HTML` block only if Gutenberg cannot parse the generated markup
 
 This is destructive to the current editor canvas, so generate carefully if the post already contains work you want to keep.
 
@@ -244,6 +250,25 @@ Parameters:
 | --- | --- | --- |
 | `provider` | yes | `claude`, `openai`, or `ollama` |
 
+For `claude` and `openai`, this now validates credentials by loading the provider's model list instead of issuing a throwaway generation request.
+
+### `POST /sync-provider`
+
+This endpoint is used by the wp-admin settings screen for live API key validation and model discovery.
+
+Permissions:
+
+- logged-in user with `manage_options`
+- valid REST nonce
+
+Parameters:
+
+| Parameter | Required | Notes |
+| --- | --- | --- |
+| `provider` | yes | `claude` or `openai` |
+| `api_key` | yes | unsaved API key currently typed in the form |
+| `current_model` | no | currently selected or previously saved model |
+
 ### `GET /providers`
 
 Returns the provider list with:
@@ -265,7 +290,8 @@ The script:
 
 - requires the Gutenberg build to exist first
 - stages the plugin under the correct runtime folder name: `ai-content-forge`
-- creates a clean `ai-content-forge.zip`
+- creates a clean versioned archive such as `ai-content-forge-v2.2.0.zip`
+- refuses to overwrite an existing archive for the same version
 - excludes development-only directories such as `node_modules`
 
 ## Repository Layout
@@ -316,20 +342,36 @@ npm install
 npm run build
 ```
 
-### Provider test fails
+### Provider connection fails
 
 Check:
 
 - API key correctness
-- model name correctness
+- whether the provider account exposes at least one supported text model
 - outbound network access from the WordPress runtime
 - Ollama reachability from the PHP runtime
 
+If OpenAI or Claude connects successfully, the provider header will show `Connected` and the `Model` field will switch to a populated dropdown.
+
 ### Generated HTML is not block-native
 
-`Post Content` is intentionally inserted as a `Custom HTML` block. If you want native paragraph/heading/list blocks, the apply flow would need to be changed in the Gutenberg app logic.
+`Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.2.0`
+
+- replaced the manual Claude and OpenAI `Test Connection` buttons with live API key validation
+- added inline `Connected` status badges near the provider headings in wp-admin
+- changed the Claude and OpenAI model fields from free text to provider-populated dropdowns
+- added a new admin REST flow for unsaved API key validation and model discovery
+- updated OpenAI generation to support modern selected models through model-aware request handling
+- changed release packaging to versioned zip filenames such as `ai-content-forge-v2.2.0.zip`
+
+### `v2.1.0`
+
+- changed `Apply to Post` for `Post Content` to convert generated HTML into native Gutenberg blocks
+- kept a `Custom HTML` fallback only for unparseable markup
 
 ### `v2.0.1`
 

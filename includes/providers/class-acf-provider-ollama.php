@@ -6,8 +6,8 @@ class ACF_Provider_Ollama extends ACF_Provider {
     public function id(): string    { return 'ollama'; }
     public function label(): string { return 'Ollama (Local)'; }
 
-    public function is_configured(): bool {
-        return ! empty( ACF_Settings::get( 'ollama_url' ) );
+    public function is_configured( array $config = [] ): bool {
+        return '' !== trim( (string) $this->resolve_setting( 'ollama_url', '', $config ) );
     }
 
     public function generate( string $prompt, int $max_tokens, float $temperature ): string {

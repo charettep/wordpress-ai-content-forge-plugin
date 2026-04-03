@@ -3,10 +3,17 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SLUG="ai-content-forge"
-ZIP_PATH="${ROOT_DIR}/${PLUGIN_SLUG}.zip"
+PLUGIN_VERSION="$(awk -F': *' '/^[[:space:]]*\* Version:/ { print $2; exit }' "${ROOT_DIR}/ai-content-forge.php")"
 BUILD_DIR="${ROOT_DIR}/gutenberg/build"
 STAGE_DIR="$(mktemp -d)"
 PLUGIN_DIR="${STAGE_DIR}/${PLUGIN_SLUG}"
+
+if [[ -z "${PLUGIN_VERSION}" ]]; then
+    echo "Could not determine plugin version from ai-content-forge.php." >&2
+    exit 1
+fi
+
+ZIP_PATH="${ROOT_DIR}/${PLUGIN_SLUG}-v${PLUGIN_VERSION}.zip"
 
 cleanup() {
     rm -rf "${STAGE_DIR}"
@@ -19,7 +26,11 @@ if [[ ! -f "${BUILD_DIR}/index.js" || ! -f "${BUILD_DIR}/index.asset.php" ]]; th
 fi
 
 mkdir -p "${PLUGIN_DIR}/gutenberg"
-rm -f "${ZIP_PATH}"
+
+if [[ -e "${ZIP_PATH}" ]]; then
+    echo "Refusing to overwrite existing release archive: ${ZIP_PATH}" >&2
+    exit 1
+fi
 
 cp "${ROOT_DIR}/ai-content-forge.php" "${PLUGIN_DIR}/"
 cp "${ROOT_DIR}/README.md" "${PLUGIN_DIR}/"

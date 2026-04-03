@@ -44,6 +44,18 @@
     display: inline-block;
 }
 
+.acf-provider-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.acf-provider-header h2 {
+    margin-bottom: 0;
+}
+
 /* Provider radio cards */
 .acf-provider-cards {
     display: flex;
@@ -82,6 +94,34 @@
 
 .acf-test-result.success { color: var(--acf-success); }
 .acf-test-result.error   { color: var(--acf-error); }
+
+.acf-provider-status {
+    font-size: .9rem;
+    font-weight: 600;
+    min-height: 1.2em;
+}
+
+.acf-provider-status.is-checking {
+    color: var(--acf-primary);
+}
+
+.acf-provider-status.is-connected {
+    color: var(--acf-success);
+}
+
+.acf-provider-status.is-connected::before {
+    content: "✔";
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.acf-provider-status.is-error {
+    color: var(--acf-error);
+}
+
+.acf-model-select {
+    min-width: 320px;
+}
 
 /* Form table tweaks */
 .acf-card .form-table th {

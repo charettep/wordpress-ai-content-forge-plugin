@@ -49,14 +49,20 @@ const TYPE_OPTIONS = Object.entries( typeLabels ).map( ( [ value, label ] ) => (
 function useApplyResult() {
     const { editPost } = useDispatch( 'core/editor' );
     const { resetBlocks } = useDispatch( 'core/block-editor' );
-    const { createBlock } = window.wp.blocks;
+    const { createBlock, rawHandler } = window.wp.blocks;
 
     return useCallback( ( type, content ) => {
         switch ( type ) {
             case 'post_content': {
-                // Insert as raw HTML block
-                const block = createBlock( 'core/html', { content } );
-                resetBlocks( [ block ] );
+                const blocks = rawHandler( { HTML: content } );
+
+                if ( Array.isArray( blocks ) && blocks.length > 0 ) {
+                    resetBlocks( blocks );
+                    break;
+                }
+
+                // Fallback to a raw HTML block if Gutenberg cannot parse the markup.
+                resetBlocks( [ createBlock( 'core/html', { content } ) ] );
                 break;
             }
             case 'seo_title':
@@ -104,6 +110,14 @@ function AcfSidebar() {
         setResult( '' );
         setCopied( false );
 
+        // Strip HTML tags and truncate to match server-side processing in ACF_Generator::build_prompt().
+        // Sending the full raw post HTML can exceed PHP-WASM's service-worker buffer limit.
+        const existingSnippet = postContent
+            .replace( /<[^>]*>/g, ' ' )
+            .replace( /\s+/g, ' ' )
+            .trim()
+            .slice( 0, 1000 );
+
         try {
             const res = await apiFetch( {
                 path:   `/${restNamespace}/generate`,
@@ -116,7 +130,7 @@ function AcfSidebar() {
                     tone,
                     language,
                     post_type:        postType,
-                    existing_content: postContent,
+                    existing_content: existingSnippet,
                 },
             } );
 
