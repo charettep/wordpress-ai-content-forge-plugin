@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.5.0`.
+The current packaged release is `v2.6.0`.
 
 ## Features
 
@@ -37,7 +37,7 @@ The current packaged release is `v2.5.0`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.5.0.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.6.0.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -404,7 +404,7 @@ The script:
 
 - requires the Gutenberg build to exist first
 - stages the plugin under the correct runtime folder name: `ai-content-forge`
-- creates a clean versioned archive such as `ai-content-forge-v2.5.0.zip`
+- creates a clean versioned archive such as `ai-content-forge-v2.6.0.zip`
 - includes only runtime plugin files needed for installation
 - refuses to overwrite an existing archive for the same version
 - excludes development-only directories such as `node_modules`
@@ -473,6 +473,13 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.6.0`
+
+- upgraded `@wordpress/scripts` from `^27.0.0` to `^31.8.0` (webpack 5.105, new JSX transform)
+- resolved all 14 Dependabot security alerts (serialize-javascript RCE, minimatch ReDoS, tar-fs path traversal, ws DoS, webpack-dev-server source theft, cookie OOB, cross-spawn ReDoS)
+- added npm overrides for `serialize-javascript`, `minimatch`, and `webpack-dev-server` to pin patched transitive dependency versions
+- reduced Gutenberg build bundle size (~10 KB vs ~15 KB) via improved tree-shaking
 
 ### `v2.5.0`
 

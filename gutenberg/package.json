@@ -1,6 +1,6 @@
 {
   "name": "ai-content-forge-gutenberg",
-  "version": "2.4.6",
+  "version": "2.6.0",
   "private": true,
   "scripts": {
     "build": "wp-scripts build src/index.js --output-path=build",
@@ -19,6 +19,11 @@
     "@wordpress/plugins": "*"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^27.0.0"
+    "@wordpress/scripts": "^31.8.0"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5",
+    "minimatch": "^3.1.3",
+    "webpack-dev-server": "^5.2.1"
   }
 }
