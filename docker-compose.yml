@@ -1,7 +1,7 @@
 # AI Content Forge — local WordPress development stack
 #
 # Configuration is loaded from `.env`.
-# Use `./docker-setup.sh` for an interactive first-run setup.
+# Use `./scripts/docker-setup.sh` for an interactive first-run setup.
 
 services:
   db:

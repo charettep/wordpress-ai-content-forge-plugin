@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_SLUG="ai-content-forge"
 CONTAINER_PLUGIN_REPO="/workspace/ai-content-forge"
 
@@ -20,7 +20,7 @@ fi
 
 if [[ -z "${ZIP_FILE}" ]]; then
 	echo "No ${PLUGIN_SLUG}-v*.zip archive found in ${ROOT_DIR}." >&2
-	echo "Build a release first with ./build-release.sh." >&2
+	echo "Build a release first with ./scripts/build-release.sh." >&2
 	exit 1
 fi
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_SLUG="ai-content-forge"
 PLUGIN_VERSION="$(awk -F': *' '/^[[:space:]]*\* Version:/ { print $2; exit }' "${ROOT_DIR}/ai-content-forge.php")"
 BUILD_DIR="${ROOT_DIR}/gutenberg/build"

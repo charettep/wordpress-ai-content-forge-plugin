@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 ENV_TEMPLATE="${ROOT_DIR}/.env.example"
 PLUGIN_SLUG="ai-content-forge"
@@ -10,7 +10,7 @@ CONTAINER_PLUGIN_REPO="/workspace/ai-content-forge"
 cd "${ROOT_DIR}"
 
 if [[ ! -t 0 ]]; then
-	echo "docker-setup.sh requires an interactive terminal." >&2
+	echo "scripts/docker-setup.sh requires an interactive terminal." >&2
 	exit 1
 fi
 
@@ -83,7 +83,7 @@ install_plugin_zip() {
 
 	if [[ -z "${zip_file}" ]]; then
 		echo "No ${PLUGIN_SLUG}-v*.zip archive found in ${ROOT_DIR}." >&2
-		echo "Build a release first with ./build-release.sh, then re-run docker-setup.sh." >&2
+		echo "Build a release first with ./scripts/build-release.sh, then re-run scripts/docker-setup.sh." >&2
 		exit 1
 	fi
 

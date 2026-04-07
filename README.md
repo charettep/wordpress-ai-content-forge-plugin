@@ -53,7 +53,7 @@ cd wordpress-ai-content-forge-plugin/gutenberg
 npm install --package-lock=false
 npm run build
 cd ..
-./build-release.sh
+./scripts/build-release.sh
 ```
 
 That produces:
@@ -89,7 +89,7 @@ This repo includes a Docker-based WordPress development stack.
 1. Run the interactive setup:
 
 ```bash
-./docker-setup.sh
+./scripts/docker-setup.sh
 ```
 
 The setup script:
@@ -109,8 +109,8 @@ Notes:
 - Build a new release archive and reinstall it to test updates cleanly:
 
 ```bash
-./build-release.sh
-./docker-install-plugin.sh
+./scripts/build-release.sh
+./scripts/docker-install-plugin.sh
 ```
 
 - When Ollama is running on the Docker host at `127.0.0.1:11434`, the bundled `ollama-proxy` service exposes it to containerized PHP at `host.docker.internal:${OLLAMA_PROXY_PORT}`.
@@ -408,7 +408,7 @@ Successful response:
 Use the release script from the plugin root:
 
 ```bash
-./build-release.sh
+./scripts/build-release.sh
 ```
 
 The script:
@@ -435,7 +435,7 @@ includes/class-acf-rest-api.php     REST routes
 includes/providers/                 Claude, OpenAI, Ollama drivers
 gutenberg/src/index.js              Sidebar source
 gutenberg/build/                    Compiled editor assets
-build-release.sh                    Release packaging script
+scripts/build-release.sh            Release packaging script
 ```
 
 ## Troubleshooting
