@@ -46,6 +46,7 @@ class ACF_Rest_API {
                 ],
                 'temperature'       => [ 'default' => null ],
                 'generation_id'     => [ 'default' => '' ],
+                'prompt_override'   => [ 'default' => '' ],
             ],
         ] );
 
@@ -84,6 +85,7 @@ class ACF_Rest_API {
                 ],
                 'temperature'       => [ 'default' => null ],
                 'generation_id'     => [ 'default' => '' ],
+                'prompt_override'   => [ 'default' => '' ],
             ],
         ] );
 
@@ -407,7 +409,7 @@ class ACF_Rest_API {
             'language'         => $request->get_param( 'language' ),
         ];
 
-        foreach ( [ 'target_length', 'structure', 'model', 'max_output_tokens', 'max_thinking_tokens', 'temperature', 'generation_id' ] as $key ) {
+        foreach ( [ 'target_length', 'structure', 'model', 'max_output_tokens', 'max_thinking_tokens', 'temperature', 'generation_id', 'prompt_override' ] as $key ) {
             if ( $request->has_param( $key ) ) {
                 $context[ $key ] = $request->get_param( $key );
             }

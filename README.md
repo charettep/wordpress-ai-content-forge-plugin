@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.10.0`.
+The current packaged release is `v2.11.0`.
 
 ## Features
 
@@ -25,9 +25,29 @@ The current packaged release is `v2.10.0`.
 - Post Usage Totals panel: cumulative token and cost breakdown per provider for the current editing session
 - Context Scope control: choose full post, selected blocks, custom pasted context, or none
 - Post Content structure + target length controls to shape output format and size
-- Advanced per-run overrides for model, max output tokens, max thinking tokens, and temperature
+- Exact Post Content target length input with a linked `1-10000` word slider
+- Advanced per-run overrides for model, prompt template, max output tokens, max thinking tokens, and temperature
 
 ## Changelog
+
+### v2.11.0 — Sidebar Word Target + Prompt Override + Packaging Fix
+
+**Gutenberg sidebar**
+
+- replaced the hardcoded `Target Length` dropdown with an exact numeric `TARGET LENGTH (WORDS)` input
+- added a linked slider for the same word target from `1` to `10000`
+- kept the target length wired into the prompt placeholder flow so the generated prompt still includes the requested approximate word count
+- added a per-run `Prompt Template Override` textarea in the `Advanced` panel
+- added `Load Saved Prompt` and `Clear Override` actions so you can start from the saved template and tweak it for one generation only
+
+**Release packaging**
+
+- fixed the release zip builder so it now includes the `images/` directory
+- added an archive validation check for `images/plugin-icon.png` to prevent future broken releases
+
+**Docs**
+
+- updated the README, Worker proxy guide, and wp-admin Ollama setup instructions to match the verified Playground-safe Worker flow and the new Gutenberg controls
 
 ### v2.10.0 — Worker Proxy Guidance + Real Plugin Icons
 
@@ -145,7 +165,7 @@ The current packaged release is `v2.10.0`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.10.0.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.11.0.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -445,7 +465,7 @@ Available controls:
 - `Language`
 - `Context Scope` (full post, selected blocks, custom paste, or none)
 - `Structure` (Post Content only)
-- `Target Length` (Post Content only)
+- `TARGET LENGTH (WORDS)` numeric input + linked slider (Post Content only)
 
 Generation streams tokens in real time from the provider into the `Result` panel. A `Stop` button appears during streaming. After generation completes, the sidebar exposes:
 
@@ -454,12 +474,15 @@ Generation streams tokens in real time from the provider into the `Result` panel
 
 #### Advanced Overrides
 
-The `Advanced` panel (collapsed by default) lets you override the saved provider model and token budgets on a per-run basis:
+The `Advanced` panel (collapsed by default) lets you override the saved provider model, prompt template, and token budgets on a per-run basis:
 
 - `Model Override`
+- `Prompt Template Override`
 - `Max Output Tokens`
 - `Max Thinking Tokens`
 - `Temperature`
+
+If you want to start from the saved prompt template for the selected content type, click `Load Saved Prompt`, adjust it for the current run, and generate. Leaving the override blank keeps the saved wp-admin prompt template in effect.
 
 #### Run Usage
 

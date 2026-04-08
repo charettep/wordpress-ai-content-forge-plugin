@@ -120,6 +120,10 @@ class ACF_Admin {
             '{keywords_line}',
             '{post_type}',
             '{language}',
+            '{structure}',
+            '{structure_line}',
+            '{target_length}',
+            '{target_length_line}',
             '{existing_content}',
             '{existing_content_block}',
         ];
@@ -550,7 +554,7 @@ Access Header Value: leave blank</code></pre>
                         <summary><?php esc_html_e( '2. If WordPress runs in the browser, use the Worker proxy path after the upstream path works', 'ai-content-forge' ); ?></summary>
                         <p><?php esc_html_e( 'WordPress Playground and other browser-executed WordPress runtimes should not send the upstream Cloudflare Access Authorization header directly to Ollama. Use the direct upstream path only as the first validation step, then deploy the Worker proxy and paste the Worker proxy values into this plugin.', 'ai-content-forge' ); ?></p>
                         <pre class="acf-code-block"><code>./scripts/create-ollama-worker-proxy.sh</code></pre>
-                        <p><?php esc_html_e( 'That script deploys the Worker, creates or reuses the public Worker hostname, writes the Worker secrets, tests browser preflight plus authenticated GET /api/tags, and prints the exact Base URL, Header Name, and Header Value for this plugin.', 'ai-content-forge' ); ?></p>
+                        <p><?php esc_html_e( 'That script deploys the Worker, creates or reuses the public Worker hostname, writes the Worker secrets, tests browser preflight plus authenticated GET /api/tags, and prints the exact Base URL, Header Name, and Header Value for this plugin. Use those Worker values in WordPress Playground and similar browser-based runtimes.', 'ai-content-forge' ); ?></p>
                         <pre class="acf-code-block"><code>Base URL: https://ollama-proxy.example.com
 Access Header Name: X-Ollama-Proxy-Token
 Access Header Value: YOUR_LONG_RANDOM_PROXY_TOKEN</code></pre>

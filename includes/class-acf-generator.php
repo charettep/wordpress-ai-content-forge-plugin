@@ -141,7 +141,10 @@ class ACF_Generator {
         $structure       = sanitize_text_field( $context['structure'] ?? '' );
         $target_length   = absint( $context['target_length'] ?? 0 );
         $existing_snip   = $existing ? mb_substr( $existing, 0, 1000 ) : '';
-        $prompt_template = ACF_Settings::get_prompt_template( $type );
+        $prompt_override = isset( $context['prompt_override'] ) ? (string) $context['prompt_override'] : '';
+        $prompt_template = '' !== trim( $prompt_override )
+            ? self::normalize_prompt_template( $prompt_override )
+            : ACF_Settings::get_prompt_template( $type );
 
         if ( '' === $structure && 'post_content' === $type ) {
             $structure = 'Full Draft';
@@ -178,6 +181,13 @@ class ACF_Generator {
         $prompt = preg_replace( "/\n{3,}/", "\n\n", $prompt );
 
         return trim( $prompt );
+    }
+
+    private static function normalize_prompt_template( string $template ): string {
+        $template = wp_check_invalid_utf8( $template );
+        $template = preg_replace( "/\r\n?/", "\n", $template );
+
+        return trim( $template );
     }
 
     private static function normalize_overrides( array $context ): array {

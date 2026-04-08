@@ -507,6 +507,13 @@ Base URL: https://${OLLAMA_WORKER_PROXY_HOSTNAME}
 Access Header Name: ${OLLAMA_WORKER_PROXY_AUTH_HEADER_NAME}
 Access Header Value: ${OLLAMA_WORKER_PROXY_AUTH_VALUE}
 
+Gutenberg test path:
+  1. Open a post in the block editor
+  2. Open AI Content Forge
+  3. Select Ollama as the provider
+  4. Leave Model Override on Default unless you need a one-run model change
+  5. Generate a short post first to confirm the Worker proxy path end to end
+
 Saved to .env:
   OLLAMA_WORKER_PROXY_NAME
   OLLAMA_WORKER_PROXY_HOSTNAME

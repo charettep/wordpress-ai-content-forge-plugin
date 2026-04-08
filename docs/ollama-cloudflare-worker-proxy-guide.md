@@ -121,6 +121,8 @@ Access Header Value: YOUR_LONG_RANDOM_PROXY_TOKEN
 
 Paste those directly into the plugin settings.
 
+In the Gutenberg sidebar, select `Ollama` as the provider, leave `Model Override` on `Default (...)` unless you need a one-run model change, and generate a short post first to verify the Worker proxy path end to end.
+
 Do not paste the upstream Cloudflare Access JSON header into the plugin when using the Worker proxy path.
 
 For a normal server-hosted WordPress site, do the opposite:

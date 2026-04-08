@@ -76,6 +76,10 @@ class ACF_Gutenberg {
             'restUrl'       => rest_url( ACF_Rest_API::REST_NAMESPACE ),
             'nonce'         => wp_create_nonce( 'wp_rest' ),
             'settings'      => ACF_Settings::for_js(),
+            'promptTemplates' => array_map(
+                static fn( string $type ): string => ACF_Settings::get_prompt_template( $type ),
+                array_combine( ACF_Generator::TYPES, ACF_Generator::TYPES )
+            ),
             'metaKeys'      => [
                 'metaDescription' => self::META_DESCRIPTION_KEY,
             ],

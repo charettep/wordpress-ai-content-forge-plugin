@@ -29,6 +29,7 @@ const {
 	restNamespace,
 	restUrl = '',
 	settings,
+	promptTemplates = {},
 	typeLabels,
 	metaKeys,
 	nonce,
@@ -94,18 +95,26 @@ const STRUCTURE_OPTIONS = [
 	{ value: 'Q&A', label: 'Q&A' },
 ];
 
-const TARGET_LENGTH_OPTIONS = [
-	{ value: '300', label: '300 words (short)' },
-	{ value: '600', label: '600 words (medium)' },
-	{ value: '900', label: '900 words (default)' },
-	{ value: '1200', label: '1200 words (long)' },
-];
-
 const CONTEXT_SCOPE_OPTIONS = [
 	{ value: 'full', label: 'Full post' },
 	{ value: 'selected', label: 'Selected blocks' },
 	{ value: 'custom', label: 'Custom paste' },
 	{ value: 'none', label: 'None' },
+];
+
+const PROMPT_PLACEHOLDERS = [
+	'{title}',
+	'{tone}',
+	'{keywords}',
+	'{keywords_line}',
+	'{post_type}',
+	'{language}',
+	'{structure}',
+	'{structure_line}',
+	'{target_length}',
+	'{target_length_line}',
+	'{existing_content}',
+	'{existing_content_block}',
 ];
 
 const PROVIDER_LABELS = {
@@ -225,6 +234,7 @@ function AcfSidebar() {
 	const [ targetLength, setTargetLength ] = useState( '900' );
 	const [ structure, setStructure ] = useState( 'Full Draft' );
 	const [ modelOverride, setModelOverride ] = useState( '' );
+	const [ promptOverride, setPromptOverride ] = useState( '' );
 	const [ maxOutputTokens, setMaxOutputTokens ] = useState(
 		String( settings.max_output_tokens ?? 1500 )
 	);
@@ -522,6 +532,7 @@ function AcfSidebar() {
 			max_output_tokens: toNumber( maxOutputTokens ),
 			max_thinking_tokens: toNumber( maxThinkingTokens ),
 			temperature: Number.isFinite( temperature ) ? temperature : toNumber( temperature ),
+			prompt_override: promptOverride.trim(),
 		};
 
 		try {
@@ -621,6 +632,34 @@ function AcfSidebar() {
 		window.navigator.clipboard.writeText( result ).then( () => {
 			setCopied( true );
 			setTimeout( () => setCopied( false ), 2000 );
+		} );
+	};
+
+	const clampNumber = ( value, min, max ) => {
+		const numeric = Number( value );
+		if ( ! Number.isFinite( numeric ) ) {
+			return min;
+		}
+
+		return Math.min( max, Math.max( min, Math.round( numeric ) ) );
+	};
+
+	const normalizeTargetLengthInput = ( value ) => {
+		const digitsOnly = String( value ?? '' ).replace( /[^\d]/g, '' );
+		if ( digitsOnly === '' ) {
+			return '';
+		}
+
+		return String( clampNumber( digitsOnly, 1, 10000 ) );
+	};
+
+	const commitTargetLengthInput = () => {
+		setTargetLength( ( current ) => {
+			if ( current === '' ) {
+				return '900';
+			}
+
+			return String( clampNumber( current, 1, 10000 ) );
 		} );
 	};
 
@@ -793,13 +832,31 @@ function AcfSidebar() {
 						</PanelRow>
 
 						<PanelRow>
-							<SelectControl
+							<TextControl
 								{ ...NEXT_CONTROL_PROPS }
-								label={ __( 'Target Length', 'ai-content-forge' ) }
+								label={ __( 'TARGET LENGTH (WORDS)', 'ai-content-forge' ) }
 								value={ targetLength }
-								options={ TARGET_LENGTH_OPTIONS }
-								onChange={ setTargetLength }
+								type="number"
+								min={ 1 }
+								max={ 10000 }
+								step={ 1 }
+								onChange={ ( value ) => setTargetLength( normalizeTargetLengthInput( value ) ) }
+								onBlur={ commitTargetLengthInput }
+								help={ __( 'Type an exact word target from 1 to 10000. Default: 900.', 'ai-content-forge' ) }
 							/>
+						</PanelRow>
+						<PanelRow>
+							<div style={ { width: '100%' } }>
+								<RangeControl
+									label={ __( 'Length Slider', 'ai-content-forge' ) }
+									value={ clampNumber( targetLength || 900, 1, 10000 ) }
+									onChange={ ( value ) => setTargetLength( String( clampNumber( value, 1, 10000 ) ) ) }
+									min={ 1 }
+									max={ 10000 }
+									step={ 1 }
+									withInputField={ false }
+								/>
+							</div>
 						</PanelRow>
 					</>
 				) }
@@ -920,6 +977,52 @@ function AcfSidebar() {
 						max={ 2 }
 						step={ 0.1 }
 					/>
+				</PanelRow>
+
+				<PanelRow>
+					<TextareaControl
+						{ ...NEXT_TEXTAREA_PROPS }
+						label={ __( 'Prompt Template Override', 'ai-content-forge' ) }
+						value={ promptOverride }
+						onChange={ setPromptOverride }
+						rows={ 10 }
+						placeholder={ __( 'Leave blank to use the saved prompt template for this content type.', 'ai-content-forge' ) }
+						help={ __( 'Optional. This overrides the saved prompt template for this generation only.', 'ai-content-forge' ) }
+					/>
+				</PanelRow>
+
+				<PanelRow>
+					<div style={ { display: 'flex', gap: '8px', width: '100%' } }>
+						<Button
+							variant="secondary"
+							onClick={ () => setPromptOverride( promptTemplates[ type ] || '' ) }
+							style={ { flex: 1, justifyContent: 'center' } }
+						>
+							{ __( 'Load Saved Prompt', 'ai-content-forge' ) }
+						</Button>
+						<Button
+							variant="tertiary"
+							onClick={ () => setPromptOverride( '' ) }
+							style={ { flex: 1, justifyContent: 'center' } }
+						>
+							{ __( 'Clear Override', 'ai-content-forge' ) }
+						</Button>
+					</div>
+				</PanelRow>
+
+				<PanelRow>
+					<div style={ { width: '100%' } }>
+						<div style={ { marginBottom: '6px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase', color: '#555' } }>
+							{ __( 'Available Placeholders', 'ai-content-forge' ) }
+						</div>
+						<div style={ { display: 'flex', flexWrap: 'wrap', gap: '6px' } }>
+							{ PROMPT_PLACEHOLDERS.map( ( placeholder ) => (
+								<code key={ placeholder } style={ { padding: '2px 6px', borderRadius: '999px', background: '#f0f0f1', fontSize: '11px' } }>
+									{ placeholder }
+								</code>
+							) ) }
+						</div>
+					</div>
 				</PanelRow>
 			</PanelBody>
 
