@@ -9,12 +9,17 @@ class ACF_Admin {
 
     private static function menu_icon_data_uri(): string {
         $svg = <<<'SVG'
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-  <rect x="1.5" y="1.5" width="17" height="17" rx="4" fill="#0F5C95"/>
-  <path d="M6 5.5h5.6l2.4 2.4v6.6a1 1 0 0 1-1 1H6.9a.9.9 0 0 1-.9-.9V6.4a.9.9 0 0 1 .9-.9Z" fill="#fff"/>
-  <path d="M11.6 5.5v1.9c0 .5.4.9.9.9h1.5" stroke="#0F5C95" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M7.8 10.2h4.6M7.8 12.3h4.1" stroke="#0F5C95" stroke-width="1.1" stroke-linecap="round"/>
-  <path d="m13.9 4.2.5 1 .9.2-.7.7.1 1-.8-.4-.9.4.2-1-.7-.7.9-.2.5-1Z" fill="#F7B500"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+  <!-- Document body -->
+  <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
+  <!-- Dog-ear fold highlight -->
+  <path d="M12.4 2.5v3c0 .33.27.6.6.6h3" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="0.7"/>
+  <!-- Content lines (negative space) -->
+  <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+  <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+  <rect x="5.5" y="13.6" width="4.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+  <!-- Lightning bolt / AI spark — overlapping the corner -->
+  <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
 </svg>
 SVG;
 

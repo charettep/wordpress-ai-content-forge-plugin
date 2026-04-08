@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- AI Content Forge — Anvil Mark, v2 -->
+  <!-- Background -->
+  <rect width="256" height="256" rx="54" fill="#0D1F38"/>
+
+  <!-- Subtle forge-glow radial behind anvil -->
+  <radialGradient id="forge-glow" cx="52%" cy="55%" r="42%">
+    <stop offset="0%"   stop-color="#F59E0B" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="256" height="256" rx="54" fill="url(#forge-glow)"/>
+
+  <!-- ─── Anvil shape ────────────────────────────────────────────────────── -->
+  <!-- Path: horn-tip → top-face → right-shoulder → waist → base-flare → base-bottom → left → horn -->
+  <path d="
+    M 38,112
+    L 60,76
+    H 196
+    V 114
+    L 166,136
+    V 158
+    L 184,178
+    H 72
+    L 90,158
+    V 136
+    L 60,114
+    Z
+  " fill="#F59E0B"/>
+
+  <!-- Anvil face highlight (top surface catch-light) -->
+  <rect x="60" y="76" width="136" height="10" rx="2" fill="#FDE68A" opacity="0.4"/>
+
+  <!-- ─── AI Spark above anvil ──────────────────────────────────────────── -->
+  <!-- Outer glow ring -->
+  <circle cx="128" cy="48" r="20" fill="#FDE68A" opacity="0.12"/>
+  <circle cx="128" cy="48" r="13" fill="#FDE68A" opacity="0.18"/>
+  <!-- Spark core -->
+  <circle cx="128" cy="48" r="7" fill="#FFFFFF"/>
+  <!-- Spark cross/star rays -->
+  <line x1="128" y1="28" x2="128" y2="38" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="128" y1="58" x2="128" y2="68" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="108" y1="48" x2="118" y2="48" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="138" y1="48" x2="148" y2="48" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Floating sparks / embers -->
+  <circle cx="172" cy="56" r="4" fill="#FDE68A" opacity="0.85"/>
+  <circle cx="192" cy="72" r="2.5" fill="#F59E0B" opacity="0.7"/>
+  <circle cx="84"  cy="58" r="3"   fill="#FDE68A" opacity="0.7"/>
+  <circle cx="68"  cy="76" r="2"   fill="#F59E0B" opacity="0.5"/>
+  <circle cx="200" cy="90" r="2"   fill="#FDE68A" opacity="0.5"/>
+</svg>

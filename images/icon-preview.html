@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Content Forge — Icon Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:  #0E2240;
+    --amber: #F59E0B;
+    --amber-light: #FDE68A;
+    --blue:  #3B82F6;
+    --ice:   #E8F2FF;
+    --slate: #94A3B8;
+    --bg:    #F0F4F8;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Syne', sans-serif;
+    color: var(--navy);
+    min-height: 100vh;
+    padding: 48px 32px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 56px;
+  }
+
+  header img {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(14,34,64,0.25);
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  header span {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--slate);
+    font-weight: 400;
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 2px 16px rgba(14,34,64,0.08);
+    border: 1px solid rgba(14,34,64,0.06);
+  }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--slate);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+  }
+
+  .icon-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .icon-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .icon-swatch span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--slate);
+    letter-spacing: 0.05em;
+  }
+
+  /* Simulated WordPress Admin Sidebar */
+  .wp-sidebar-sim {
+    background: #1d2327;
+    border-radius: 12px;
+    padding: 16px 0;
+    width: 220px;
+  }
+
+  .wp-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    color: #a7aaad;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .wp-menu-item:hover {
+    background: #2c3338;
+    color: #fff;
+  }
+
+  .wp-menu-item.active {
+    background: #2271b1;
+    color: #fff;
+  }
+
+  .wp-menu-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .wp-menu-item.active .wp-menu-icon,
+  .wp-menu-item:hover .wp-menu-icon {
+    opacity: 1;
+  }
+
+  /* Simulated toolbar */
+  .wp-toolbar-sim {
+    background: #1d2327;
+    border-radius: 8px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    height: 46px;
+    gap: 4px;
+  }
+
+  .wp-toolbar-item {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    height: 100%;
+    color: #a7aaad;
+    cursor: pointer;
+  }
+
+  .wp-toolbar-item.active {
+    background: #2271b1;
+    color: #fff;
+  }
+
+  .wp-toolbar-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Simulated plugins list */
+  .wp-plugins-sim {
+    background: #f0f0f1;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #c3c4c7;
+  }
+
+  .wp-plugins-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e6e6e6;
+  }
+
+  .wp-plugins-row.active-plugin {
+    background: #f0f6fc;
+    border-left: 4px solid #2271b1;
+  }
+
+  .plugin-name {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+  }
+
+  /* Gutenberg panel sim */
+  .gutenberg-sim {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .gutenberg-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #eee;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+  }
+
+  .gutenberg-panel-body {
+    padding: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    color: #757575;
+  }
+
+  /* Full color showcase */
+  .showcase-large {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+
+  .showcase-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .showcase-item img {
+    border-radius: 22px;
+    box-shadow: 0 12px 40px rgba(14,34,64,0.3), 0 2px 8px rgba(14,34,64,0.15);
+  }
+
+  .showcase-item span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--slate);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Colors palette */
+  .palette {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .swatch-color {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+
+  .swatch span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--slate);
+    letter-spacing: 0.04em;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--amber) 0%, transparent 60%);
+    margin: 48px 0;
+    opacity: 0.3;
+  }
+
+  /* Inline SVG icon (CSS currentColor demo) */
+  .svg-color-demo {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .svg-demo-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+  }
+
+  .svg-demo-chip svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+  .chip-dark { background: #1d2327; color: #a7aaad; }
+  .chip-active { background: #2271b1; color: #fff; }
+  .chip-light { background: #f0f0f1; color: #1d2327; }
+  .chip-ocean { background: #0E2240; color: #E8F2FF; }
+
+  footer {
+    margin-top: 64px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--slate);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="plugin-icon.png" alt="AI Content Forge icon">
+  <div>
+    <h1>AI Content Forge</h1>
+    <span>Visual Branding System · v2.12+</span>
+  </div>
+</header>
+
+<h2>Icon Scale Showcase</h2>
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-label">Full-Color Icon at Key Sizes</div>
+  <div class="showcase-large">
+    <div class="showcase-item">
+      <img src="plugin-icon.png" width="128" height="128" alt="128×128">
+      <span>128 × 128</span>
+    </div>
+    <div class="showcase-item">
+      <img src="plugin-icon.png" width="64" height="64" alt="64×64">
+      <span>64 × 64</span>
+    </div>
+    <div class="showcase-item">
+      <img src="plugin-icon.png" width="32" height="32" alt="32×32">
+      <span>32 × 32</span>
+    </div>
+    <div class="showcase-item">
+      <img src="plugin-icon.png" width="20" height="20" alt="20×20">
+      <span>20 × 20</span>
+    </div>
+    <div class="showcase-item">
+      <img src="plugin-icon.png" width="16" height="16" alt="16×16">
+      <span>16 × 16</span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="grid">
+
+  <!-- WordPress Admin Sidebar simulation -->
+  <div class="card">
+    <div class="card-label">WP Admin Sidebar Menu</div>
+    <div class="wp-sidebar-sim">
+      <div class="wp-menu-item">
+        <svg class="wp-menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+          <path d="M2 3a1 1 0 0 1 1-1h9l4 4v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Z" fill="currentColor" opacity="0.6"/>
+        </svg>
+        Posts
+      </div>
+      <div class="wp-menu-item active">
+        <!-- Updated AI Content Forge icon using currentColor -->
+        <svg class="wp-menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+          <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
+          <path d="M12.4 2.5v3c0 .33.27.6.6.6h3" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="0.7"/>
+          <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+          <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+          <rect x="5.5" y="13.6" width="4.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+          <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
+        </svg>
+        AI Content Forge
+      </div>
+      <div class="wp-menu-item">
+        <svg class="wp-menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.6"/>
+        </svg>
+        Appearance
+      </div>
+    </div>
+  </div>
+
+  <!-- WordPress Toolbar simulation -->
+  <div class="card">
+    <div class="card-label">WP Admin Toolbar</div>
+    <div class="wp-toolbar-sim">
+      <div class="wp-toolbar-item">
+        <svg class="wp-toolbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2Z" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="wp-toolbar-item active">
+        <svg class="wp-toolbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+          <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
+          <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+          <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+          <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="wp-toolbar-item">
+        <svg class="wp-toolbar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2Z" opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- WordPress Plugins list simulation -->
+  <div class="card">
+    <div class="card-label">WP Plugins List</div>
+    <div class="wp-plugins-sim">
+      <div class="wp-plugins-row">
+        <div style="width:40px;height:40px;background:#e0e0e0;border-radius:4px;"></div>
+        <span class="plugin-name" style="color:#888;">Some Other Plugin</span>
+      </div>
+      <div class="wp-plugins-row active-plugin">
+        <img src="plugin-icon.png" width="40" height="40" style="border-radius:6px;" alt="ACF icon">
+        <span class="plugin-name">AI Content Forge</span>
+      </div>
+      <div class="wp-plugins-row">
+        <div style="width:40px;height:40px;background:#e0e0e0;border-radius:4px;"></div>
+        <span class="plugin-name" style="color:#888;">Another Plugin</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gutenberg Panel simulation -->
+  <div class="card">
+    <div class="card-label">Gutenberg Editor Panel</div>
+    <div style="display: flex; gap: 16px; flex-direction: column;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--slate); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em;">Selected state</div>
+        <div class="gutenberg-sim">
+          <div class="gutenberg-panel-header">
+            <img src="plugin-icon-gutenberg-selected.png" width="20" height="20" alt="" style="border-radius:4px;">
+            AI Content Forge
+          </div>
+          <div class="gutenberg-panel-body">Generate AI content for this post…</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--slate); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em;">Unselected / collapsed</div>
+        <div class="gutenberg-sim">
+          <div class="gutenberg-panel-header" style="color: #757575; background: #f9f9f9;">
+            <img src="plugin-icon-gutenberg-unselected.png" width="20" height="20" alt="" style="border-radius:4px;">
+            AI Content Forge
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="divider"></div>
+
+<!-- SVG currentColor Demo -->
+<h2>Admin Sidebar SVG — currentColor Adaptation</h2>
+<div class="card" style="margin-bottom: 48px;">
+  <div class="card-label">How the icon adapts to WordPress color schemes</div>
+  <div class="svg-color-demo" style="margin-top: 8px;">
+    <div class="svg-demo-chip chip-dark">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+        <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
+        <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="13.6" width="4.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
+      </svg>
+      Default (dark)
+    </div>
+    <div class="svg-demo-chip chip-active">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+        <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
+        <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="13.6" width="4.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
+      </svg>
+      Active (blue)
+    </div>
+    <div class="svg-demo-chip chip-light">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+        <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
+        <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="13.6" width="4.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
+      </svg>
+      Light scheme
+    </div>
+    <div class="svg-demo-chip chip-ocean">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+        <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
+        <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <rect x="5.5" y="13.6" width="4.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
+        <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
+      </svg>
+      Ocean dark
+    </div>
+  </div>
+</div>
+
+<!-- Palette -->
+<h2>Brand Color Palette</h2>
+<div class="card">
+  <div class="card-label">Core colors</div>
+  <div class="palette">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#0E2240;"></div>
+      <span>#0E2240</span>
+      <span style="font-size:0.55rem;">Forge Navy</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#1A4A8A;"></div>
+      <span>#1A4A8A</span>
+      <span style="font-size:0.55rem;">Steel Blue</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#3B82F6;"></div>
+      <span>#3B82F6</span>
+      <span style="font-size:0.55rem;">Electric</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#E8F2FF;"></div>
+      <span>#E8F2FF</span>
+      <span style="font-size:0.55rem;">Ice</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#F59E0B; border: 1px solid rgba(0,0,0,0.1);"></div>
+      <span>#F59E0B</span>
+      <span style="font-size:0.55rem;">Forge Amber</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#FDE68A; border: 1px solid rgba(0,0,0,0.08);"></div>
+      <span>#FDE68A</span>
+      <span style="font-size:0.55rem;">Spark</span>
+    </div>
+  </div>
+</div>
+
+<footer>AI Content Forge · Visual Branding System · Generated 2026-04-08</footer>
+
+</body>
+</html>
