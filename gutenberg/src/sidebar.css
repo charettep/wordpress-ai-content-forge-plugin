@@ -1,6 +1,10 @@
+.interface-complementary-area__fill:has(> .interface-complementary-area.editor-sidebar > .aig-gutenberg-sidebar) {
+	width: 420px !important;
+}
+
 .interface-complementary-area.editor-sidebar:has(> .aig-gutenberg-sidebar) {
-	width: 420px;
-	min-width: 420px;
+	width: 420px !important;
+	min-width: 420px !important;
 }
 
 .interface-complementary-area.editor-sidebar:has(> .aig-gutenberg-sidebar) > .aig-gutenberg-sidebar {
@@ -8,8 +12,12 @@
 }
 
 @media (max-width: 781px) {
+	.interface-complementary-area__fill:has(> .interface-complementary-area.editor-sidebar > .aig-gutenberg-sidebar) {
+		width: 100vw !important;
+	}
+
 	.interface-complementary-area.editor-sidebar:has(> .aig-gutenberg-sidebar) {
-		width: 100vw;
-		min-width: 0;
+		width: 100vw !important;
+		min-width: 0 !important;
 	}
 }
