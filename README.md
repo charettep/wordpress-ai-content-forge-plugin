@@ -9,15 +9,6 @@
   AI-powered content generation via Claude, OpenAI, or Ollama.
 </p>
 
-### Brand Colours
-
-| Swatch | Name | Hex |
-|--------|------|-----|
-| 🟢 | Genie Teal | `#10B981` |
-| 🟤 | Deep Forest | `#064E3B` |
-| 🟡 | Turban Gold | `#F59E0B` |
-| 🟢 | Wisp Mint | `#6EE7B7` |
-
 AI Genie is a WordPress plugin for generating editorial content with Anthropic Claude, OpenAI, or Ollama. It adds:
 
 - a dedicated `AI Genie` wp-admin sidebar menu
