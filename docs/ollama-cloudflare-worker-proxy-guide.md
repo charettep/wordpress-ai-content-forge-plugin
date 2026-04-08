@@ -109,7 +109,7 @@ Recommended defaults:
 - `OLLAMA_WORKER_PROXY_AUTH_HEADER_NAME=X-Ollama-Proxy-Token`
 - `OLLAMA_WORKER_PROXY_HOSTNAME=ollama-proxy.<your-domain>`
 
-## What To Paste Into AI Content Forge
+## What To Paste Into AI Genie
 
 At the end, the script prints values like:
 

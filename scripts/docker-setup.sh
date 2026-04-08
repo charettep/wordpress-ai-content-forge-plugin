@@ -5,8 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 ENV_TEMPLATE="${ROOT_DIR}/.env.example"
 ENV_LIB="${ROOT_DIR}/scripts/lib/env.sh"
-PLUGIN_SLUG="ai-content-forge"
-CONTAINER_PLUGIN_REPO="/workspace/ai-content-forge"
+PLUGIN_SLUG="ai-genie"
+CONTAINER_PLUGIN_REPO="/workspace/ai-genie"
 ENV_KEYS=(
 	SITE_PORT
 	PMA_PORT
@@ -133,7 +133,7 @@ bootstrap_defaults() {
 	generated_admin_password="$(generate_secure_secret)"
 	set_default_if_blank "WP_ADMIN_PASSWORD" "${generated_admin_password}"
 	set_default_if_blank "WP_ADMIN_EMAIL" "${WP_ADMIN_USERNAME}@local.invalid"
-	set_default_if_blank "WP_SITE_TITLE" "AI Content Forge Local"
+	set_default_if_blank "WP_SITE_TITLE" "AI Genie Local"
 	set_default_if_blank "WP_BLOG_DESCRIPTION" "WordPress local development instance"
 
 	set_default_if_blank "OLLAMA_PROXY_PORT" "11435"
@@ -393,7 +393,7 @@ ${WP} rewrite structure '/%postname%/' --hard >/dev/null
 
 POST_ID="$(
 	${WP} post create \
-		--post_title="AI Content Forge Test Post" \
+		--post_title="AI Genie Test Post" \
 		--post_status=draft \
 		--post_type=post \
 		--porcelain 2>/dev/null || true
@@ -411,7 +411,7 @@ Site: ${SITE_URL}
 Admin: ${SITE_URL}/wp-admin
 Login: ${WP_ADMIN_USERNAME} / ${WP_ADMIN_PASSWORD}
 phpMyAdmin: http://localhost:${PMA_PORT}
-Plugin settings: ${SITE_URL}/wp-admin/admin.php?page=ai-content-forge
+Plugin settings: ${SITE_URL}/wp-admin/admin.php?page=ai-genie
 
 The active Docker configuration is saved in:
   ${ENV_FILE}

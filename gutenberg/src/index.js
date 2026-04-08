@@ -1,5 +1,5 @@
 /**
- * AI Content Forge — Gutenberg Sidebar Plugin
+ * AI Genie — Gutenberg Sidebar Plugin
  *
  * Build: cd gutenberg && npm install && npm run build
  */
@@ -539,7 +539,7 @@ function AcfSidebar() {
 			const controller = new window.AbortController();
 			const generationId = window.crypto?.randomUUID
 				? window.crypto.randomUUID()
-				: `acf-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }`;
+				: `aig-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }`;
 
 			abortControllerRef.current = controller;
 			activeRunRef.current = {
@@ -1182,11 +1182,11 @@ registerPlugin( 'ai-genie', {
 				target="ai-genie-sidebar"
 				icon={ <CreateIcon /> }
 			>
-				{ __( 'AI Content Forge', 'ai-genie' ) }
+				{ __( 'AI Genie', 'ai-genie' ) }
 			</PluginSidebarMoreMenuItem>
 			<PluginSidebar
 				name="ai-genie-sidebar"
-				title={ __( 'AI Content Forge', 'ai-genie' ) }
+				title={ __( 'AI Genie', 'ai-genie' ) }
 				icon={ <CreateIcon /> }
 			>
 				<AcfSidebar />

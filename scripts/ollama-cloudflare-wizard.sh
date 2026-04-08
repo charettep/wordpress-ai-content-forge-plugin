@@ -88,7 +88,7 @@ What it does:
   - forces the Ollama origin Host header so the public endpoint actually works
   - saves the Cloudflare/Ollama defaults it used back into .env
   - tests the final public Ollama endpoint
-  - prints the exact WordPress values to paste into AI Content Forge
+  - prints the exact WordPress values to paste into AI Genie
 
 Use --permissions to print the required Cloudflare API token scopes without starting the interactive flow.
 EOF
@@ -179,7 +179,7 @@ default_tunnel_name() {
         host_name="local-machine"
     fi
 
-    printf 'acf-%s' "${host_name}"
+    printf 'aig-%s' "${host_name}"
 }
 
 extract_host_from_url() {
@@ -655,7 +655,7 @@ wait_for_public_endpoint() {
     return 0
 }
 
-print_heading "AI Content Forge Ollama + Cloudflare Wizard"
+print_heading "AI Genie Ollama + Cloudflare Wizard"
 echo "This script can create and verify the Cloudflare Tunnel, DNS record, Access app,"
 echo "service token, and service-auth policy needed for a remote Ollama endpoint."
 echo "It prompts for your Cloudflare API token, account ID, zone ID, and desired public Ollama hostname."
@@ -954,7 +954,7 @@ CLOUDFLARE_SERVICE_TOKEN_ID="${SERVICE_TOKEN_ID}"
 print_heading "Creating or updating Service Auth policy"
 POLICY_ID="${CLOUDFLARE_ACCESS_POLICY_ID:-}"
 if [[ -z "${POLICY_ID}" ]]; then
-    POLICY_ID="$(jq -r '.result.policies[]? | select(.name == "AI Content Forge Service Auth") | .id' <<< "${ACCESS_APP_RESPONSE}" | head -n 1)"
+    POLICY_ID="$(jq -r '.result.policies[]? | select(.name == "AI Genie Service Auth") | .id' <<< "${ACCESS_APP_RESPONSE}" | head -n 1)"
 fi
 
 POLICY_PRECEDENCE="$(jq -r --arg policy_id "${POLICY_ID}" '
@@ -969,7 +969,7 @@ POLICY_PAYLOAD="$(jq -nc \
     --arg token_id "${SERVICE_TOKEN_ID}" \
     --argjson precedence "${POLICY_PRECEDENCE}" \
     '{
-        "name": "AI Content Forge Service Auth",
+        "name": "AI Genie Service Auth",
         "decision": "non_identity",
         "include": [
             {
@@ -1030,7 +1030,7 @@ Run mode: ${RUN_MODE}
 Local config status: ${LOCAL_CONFIG_STATUS}
 DNS route mode: ${DNS_ROUTE_STATUS}
 
-Paste these into AI Content Forge -> Ollama:
+Paste these into AI Genie -> Ollama:
 
 Base URL: ${PUBLIC_OLLAMA_URL}
 Access Header Name: ${CLOUDFLARE_ACCESS_HEADER_NAME}

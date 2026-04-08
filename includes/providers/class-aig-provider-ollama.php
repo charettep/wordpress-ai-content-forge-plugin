@@ -456,7 +456,7 @@ class AIG_Provider_Ollama extends AIG_Provider {
     }
 
     private function get_cancel_flag_key( string $generation_id ): string {
-        return 'acf_ollama_cancel_' . md5( $generation_id );
+        return 'aig_ollama_cancel_' . md5( $generation_id );
     }
 
     private function is_cancel_requested( string $generation_id ): bool {

@@ -1,8 +1,26 @@
-# AI Content Forge
+# AI Genie
 
-AI Content Forge is a WordPress plugin for generating editorial content with Anthropic Claude, OpenAI, or Ollama. It adds:
+<p align="center">
+  <img src="images/plugin-icon.png" alt="AI Genie mascot" width="128" height="128">
+</p>
 
-- a dedicated `AI Content Forge` wp-admin sidebar menu
+<p align="center">
+  <strong>Your AI genie for WordPress content.</strong><br>
+  AI-powered content generation via Claude, OpenAI, or Ollama.
+</p>
+
+### Brand Colours
+
+| Swatch | Name | Hex |
+|--------|------|-----|
+| 🟢 | Genie Teal | `#10B981` |
+| 🟤 | Deep Forest | `#064E3B` |
+| 🟡 | Turban Gold | `#F59E0B` |
+| 🟢 | Wisp Mint | `#6EE7B7` |
+
+AI Genie is a WordPress plugin for generating editorial content with Anthropic Claude, OpenAI, or Ollama. It adds:
+
+- a dedicated `AI Genie` wp-admin sidebar menu
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
@@ -191,11 +209,11 @@ The current packaged release is `v2.12.0`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.12.0.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-genie-v2.12.0.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
-5. Open `AI Content Forge` in wp-admin and configure at least one provider.
+5. Open `AI Genie` in wp-admin and configure at least one provider.
 6. For updates, upload the newer zip through the same `Upload Plugin` flow and let WordPress replace the previous installed version.
 
 ## Build From Source
@@ -203,8 +221,8 @@ Use the packaged zip if you just want to install the plugin in WordPress.
 Clone the repo and build the Gutenberg assets before packaging a release.
 
 ```bash
-git clone https://github.com/charettep/wordpress-ai-content-forge-plugin.git
-cd wordpress-ai-content-forge-plugin/gutenberg
+git clone https://github.com/charettep/wordpress-ai-genie-plugin.git
+cd wordpress-ai-genie-plugin/gutenberg
 npm install --package-lock=false
 npm run build
 cd ..
@@ -215,26 +233,26 @@ That produces:
 
 - `gutenberg/build/index.js`
 - `gutenberg/build/index.asset.php`
-- `ai-content-forge-vX.Y.Z.zip`
+- `ai-genie-vX.Y.Z.zip`
 
 ## Local Development Install
 
 To test from source without using the release zip:
 
 1. Build the Gutenberg assets.
-2. Copy the plugin directory into `wp-content/plugins/ai-content-forge`.
-3. Activate `AI Content Forge` in wp-admin.
+2. Copy the plugin directory into `wp-content/plugins/ai-genie`.
+3. Activate `AI Genie` in wp-admin.
 
 Example:
 
 ```bash
-cp -R /path/to/wordpress-ai-content-forge-plugin /path/to/wp-content/plugins/ai-content-forge
+cp -R /path/to/wordpress-ai-genie-plugin /path/to/wp-content/plugins/ai-genie
 ```
 
-The plugin directory name inside WordPress must be `ai-content-forge` so the main file path resolves to:
+The plugin directory name inside WordPress must be `ai-genie` so the main file path resolves to:
 
 ```text
-wp-content/plugins/ai-content-forge/ai-content-forge.php
+wp-content/plugins/ai-genie/ai-genie.php
 ```
 
 ## Docker Development
@@ -258,7 +276,7 @@ The setup script:
 - writes those values back to the local `.env`
 - starts the Compose stack
 - installs WordPress if needed
-- installs and activates the latest built `ai-content-forge-v*.zip` from the repo root
+- installs and activates the latest built `ai-genie-v*.zip` from the repo root
 
 Notes:
 
@@ -266,7 +284,7 @@ Notes:
 - `.env` is gitignored and intended only for local machine-specific values and secrets.
 - The site URL is `http://localhost:<SITE_PORT>`.
 - The phpMyAdmin URL is `http://localhost:<PMA_PORT>`.
-- The plugin repo is mounted into the containers as a read-only workspace at `/workspace/ai-content-forge`, not as the live plugin directory.
+- The plugin repo is mounted into the containers as a read-only workspace at `/workspace/ai-genie`, not as the live plugin directory.
 - Build a new release archive and reinstall it to test updates cleanly:
 
 ```bash
@@ -280,7 +298,7 @@ Notes:
 
 ## Configuration
 
-Open `AI Content Forge` in wp-admin.
+Open `AI Genie` in wp-admin.
 
 ### Default Provider
 
@@ -481,7 +499,7 @@ Use the settings screen to:
 
 ### Gutenberg Sidebar
 
-Open the block editor for a post or page, then open `AI Content Forge` from the editor sidebar / more-menu entry.
+Open the block editor for a post or page, then open `AI Genie` from the editor sidebar / more-menu entry.
 
 Available controls:
 
@@ -552,7 +570,7 @@ This is destructive to the current editor canvas, so generate carefully if the p
 #### Meta Description
 
 - Generates a meta description
-- Applies the result to `_acf_meta_description` post meta in the editor and saves it with the post
+- Applies the result to `_aig_meta_description` post meta in the editor and saves it with the post
 
 Important:
 
@@ -592,7 +610,7 @@ The built-in `post_content` template now explicitly instructs the model to:
 Namespace:
 
 ```text
-/wp-json/ai-content-forge/v1
+/wp-json/ai-genie/v1
 ```
 
 All endpoints require:
@@ -735,8 +753,8 @@ Use the release script from the plugin root:
 The script:
 
 - requires the Gutenberg build to exist first
-- stages the plugin under the correct runtime folder name: `ai-content-forge`
-- creates a clean versioned archive such as `ai-content-forge-v2.10.0.zip`
+- stages the plugin under the correct runtime folder name: `ai-genie`
+- creates a clean versioned archive such as `ai-genie-v2.10.0.zip`
 - the plugin zip remains suitable for direct `wp-admin` upload and activation
 - includes only runtime plugin files needed for installation
 - refuses to overwrite an existing archive for the same version
@@ -745,15 +763,15 @@ The script:
 ## Repository Layout
 
 ```text
-ai-content-forge.php                 Plugin bootstrap and version headers
-admin/class-acf-admin.php           Settings screen
-admin/class-acf-gutenberg.php       Gutenberg asset loader
+ai-genie.php                 Plugin bootstrap and version headers
+admin/class-aig-admin.php           Settings screen
+admin/class-aig-gutenberg.php       Gutenberg asset loader
 assets/css/admin.css                Settings page styles
 assets/js/admin.js                  Settings page behavior
-includes/class-acf-settings.php     Option storage and sanitization
-includes/class-acf-provider.php     Provider base class
-includes/class-acf-generator.php    Prompt construction and dispatch
-includes/class-acf-rest-api.php     REST routes
+includes/class-aig-settings.php     Option storage and sanitization
+includes/class-aig-provider.php     Provider base class
+includes/class-aig-generator.php    Prompt construction and dispatch
+includes/class-aig-rest-api.php     REST routes
 includes/providers/                 Claude, OpenAI, Ollama drivers
 gutenberg/src/index.js              Sidebar source
 gutenberg/build/                    Compiled editor assets
@@ -771,10 +789,10 @@ workers/ollama-proxy/src/index.js   Cloudflare Worker proxy source
 
 Check that the installed archive contains:
 
-- `admin/class-acf-admin.php`
-- `admin/class-acf-gutenberg.php`
+- `admin/class-aig-admin.php`
+- `admin/class-aig-gutenberg.php`
 - `includes/...`
-- `ai-content-forge.php`
+- `ai-genie.php`
 
 The `v2.0.1` package fixes the broken zip layout that caused activation fatals in earlier builds.
 
@@ -935,7 +953,7 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 
 ### `v2.4.0`
 
-- moved the wp-admin configuration page from `Settings` into its own top-level `AI Content Forge` sidebar menu placed after `Plugins`
+- moved the wp-admin configuration page from `Settings` into its own top-level `AI Genie` sidebar menu placed after `Plugins`
 - added editable prompt templates in wp-admin for `Post Content`, `SEO Title`, `Meta Description`, and `Excerpt`
 - converted the generator to use saved prompt templates with placeholder replacement instead of hard-coded prompt text
 - kept the release archive limited to runtime plugin files for installation
@@ -949,7 +967,7 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 
 ### `v2.3.2`
 
-- fixed `Meta Description` apply/save so `_acf_meta_description` is registered in REST and persists with the post
+- fixed `Meta Description` apply/save so `_aig_meta_description` is registered in REST and persists with the post
 - fixed blank-success OpenAI responses for `gpt-5` when the Responses API consumed `max_output_tokens` on reasoning without returning visible text
 - cleaned up Gutenberg sidebar warnings, lint issues, and build instructions for the current toolchain
 - replaced hard-coded Docker ports and credentials with an interactive `.env`-driven setup flow
@@ -961,7 +979,7 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 - changed the Claude and OpenAI model fields from free text to provider-populated dropdowns
 - added a new admin REST flow for unsaved API key validation and model discovery
 - updated OpenAI generation to support modern selected models through model-aware request handling
-- changed release packaging to versioned zip filenames such as `ai-content-forge-v2.2.0.zip`
+- changed release packaging to versioned zip filenames such as `ai-genie-v2.2.0.zip`
 
 ### `v2.1.0`
 

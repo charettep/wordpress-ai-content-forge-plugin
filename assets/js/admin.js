@@ -1,4 +1,4 @@
-/* AI Content Forge — Admin JS */
+/* AI Genie — Admin JS */
 /* global aigAdmin, jQuery */
 jQuery( function ( $ ) {
     const { restUrl, nonce, i18n } = aigAdmin;

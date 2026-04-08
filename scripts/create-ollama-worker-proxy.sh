@@ -81,7 +81,7 @@ What it does:
   - stores the upstream Cloudflare Access service-token credentials as Worker secrets
   - stores one separate proxy token as a Worker secret for WordPress or Playground to send
   - tests the final Worker proxy endpoint with CORS preflight + authenticated GET
-  - prints the exact Base URL, Header Name, and Header Value to paste into AI Content Forge
+  - prints the exact Base URL, Header Name, and Header Value to paste into AI Genie
 
 Prerequisite:
   - Your upstream Ollama hostname must already work through Cloudflare Access.
@@ -212,7 +212,7 @@ load_defaults() {
     env_load_file "${ENV_FILE}" "${WORKER_ENV_KEYS[@]}"
 
     default_if_empty "CLOUDFLARE_ACCESS_HEADER_NAME" "Authorization"
-    default_if_empty "OLLAMA_WORKER_PROXY_NAME" "acf-ollama-proxy"
+    default_if_empty "OLLAMA_WORKER_PROXY_NAME" "aig-ollama-proxy"
     default_if_empty "OLLAMA_WORKER_PROXY_ALLOWED_ORIGINS" "https://playground.wordpress.net"
     default_if_empty "OLLAMA_WORKER_PROXY_AUTH_HEADER_NAME" "X-Ollama-Proxy-Token"
     default_if_empty "OLLAMA_WORKER_PROXY_AUTH_VALUE" "$(generate_secure_secret)"
@@ -501,7 +501,7 @@ Worker proxy deployed successfully.
 Use these values for browser-based WordPress runtimes such as WordPress Playground.
 For normal server-hosted WordPress, keep using the direct upstream Ollama hostname and Access header instead.
 
-Paste these into AI Content Forge -> Ollama:
+Paste these into AI Genie -> Ollama:
 
 Base URL: https://${OLLAMA_WORKER_PROXY_HOSTNAME}
 Access Header Name: ${OLLAMA_WORKER_PROXY_AUTH_HEADER_NAME}
@@ -509,7 +509,7 @@ Access Header Value: ${OLLAMA_WORKER_PROXY_AUTH_VALUE}
 
 Gutenberg test path:
   1. Open a post in the block editor
-  2. Open AI Content Forge
+  2. Open AI Genie
   3. Select Ollama as the provider
   4. Leave Model Override on Default unless you need a one-run model change
   5. Generate a short post first to confirm the Worker proxy path end to end

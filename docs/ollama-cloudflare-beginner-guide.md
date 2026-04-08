@@ -4,7 +4,7 @@ This guide is for the most common difficult setup:
 
 - Ollama runs on your own computer, home server, NAS, or Ubuntu/WSL machine.
 - Your WordPress site is hosted somewhere else.
-- You want AI Content Forge to use your own Ollama server safely.
+- You want AI Genie to use your own Ollama server safely.
 - You want instructions that assume you may be starting from zero.
 
 If your WordPress site and Ollama are already on the same machine, stop here and use:
@@ -79,7 +79,7 @@ At the end of this guide, you will have:
 1. Ollama running locally on your machine.
 2. A Cloudflare Tunnel that publishes one hostname such as `${OLLAMA_PUBLIC_HOSTNAME}`.
 3. A Cloudflare Access application protecting that hostname.
-4. One header name and one header value that AI Content Forge can send to Cloudflare Access.
+4. One header name and one header value that AI Genie can send to Cloudflare Access.
 5. A working WordPress configuration:
 
 ```text
@@ -289,7 +289,7 @@ At this point Cloudflare is protecting the hostname, but service tokens still us
 
 ## Step 10: Convert Cloudflare Access to One Header
 
-AI Content Forge accepts one optional header name and one optional header value for Ollama.
+AI Genie accepts one optional header name and one optional header value for Ollama.
 
 Cloudflare service tokens normally use two headers:
 
@@ -369,7 +369,7 @@ If it does not print JSON, stay here and fix the tunnel or Access configuration 
 
 ## Step 12: Paste the Values into WordPress
 
-Open `AI Content Forge` in wp-admin and paste:
+Open `AI Genie` in wp-admin and paste:
 
 ```text
 Base URL: https://${OLLAMA_PUBLIC_HOSTNAME}

@@ -2,14 +2,14 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_SLUG="ai-content-forge"
-PLUGIN_VERSION="$(awk -F': *' '/^[[:space:]]*\* Version:/ { print $2; exit }' "${ROOT_DIR}/ai-content-forge.php")"
+PLUGIN_SLUG="ai-genie"
+PLUGIN_VERSION="$(awk -F': *' '/^[[:space:]]*\* Version:/ { print $2; exit }' "${ROOT_DIR}/ai-genie.php")"
 BUILD_DIR="${ROOT_DIR}/gutenberg/build"
 STAGE_DIR="$(mktemp -d)"
 PLUGIN_DIR="${STAGE_DIR}/${PLUGIN_SLUG}"
 
 if [[ -z "${PLUGIN_VERSION}" ]]; then
-    echo "Could not determine plugin version from ai-content-forge.php." >&2
+    echo "Could not determine plugin version from ai-genie.php." >&2
     exit 1
 fi
 
@@ -37,7 +37,7 @@ if [[ -e "${ZIP_PATH}" ]]; then
     exit 1
 fi
 
-cp "${ROOT_DIR}/ai-content-forge.php" "${PLUGIN_DIR}/"
+cp "${ROOT_DIR}/ai-genie.php" "${PLUGIN_DIR}/"
 cp "${ROOT_DIR}/README.md" "${PLUGIN_DIR}/"
 cp -R "${ROOT_DIR}/admin" "${PLUGIN_DIR}/"
 cp -R "${ROOT_DIR}/assets" "${PLUGIN_DIR}/"
@@ -61,8 +61,8 @@ fi
 if command -v unzip >/dev/null 2>&1; then
     ARCHIVE_LISTING="$(unzip -Z1 "${ZIP_PATH}")"
 
-    if ! grep -qx "${PLUGIN_SLUG}/ai-content-forge.php" <<< "${ARCHIVE_LISTING}"; then
-        echo "Release archive is missing ${PLUGIN_SLUG}/ai-content-forge.php." >&2
+    if ! grep -qx "${PLUGIN_SLUG}/ai-genie.php" <<< "${ARCHIVE_LISTING}"; then
+        echo "Release archive is missing ${PLUGIN_SLUG}/ai-genie.php." >&2
         exit 1
     fi
 
