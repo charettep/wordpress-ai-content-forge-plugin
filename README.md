@@ -15,7 +15,7 @@ AI Genie is a WordPress plugin for generating editorial content with Anthropic C
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v3.1.3`.
+The current packaged release is `v3.1.4`.
 
 ## Features
 
@@ -38,6 +38,7 @@ The current packaged release is `v3.1.3`.
 - Exact Post Content target length input with no hardcoded upper word limit
 - Advanced per-run overrides for model, prompt template, max output tokens, max thinking tokens, and temperature
 - Post Content prompt enforcement that treats target length, max output tokens, and max thinking tokens as generation rules instead of passive hints
+- Automatic continuation for long-form post generation when a model stops early but there is still unused token budget available under the hard caps
 - Wider Gutenberg plugin sidebar layout for the AI Genie panel so generation controls have more usable horizontal space
 - Redesigned Gutenberg sidebar with a fixed top control block, grouped `Parameters` sections, a dedicated prompt override tab, and a larger always-visible result stream field
 
@@ -84,7 +85,7 @@ Live usage notes:
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-genie-v3.1.3.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-genie-v3.1.4.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -706,6 +707,12 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v3.1.4`
+
+- added budget-aware continuation passes for long-form Gutenberg post generation when a provider stops early and the draft is still materially below target length
+- continuation only spends remaining output/thinking budget so the configured token fields remain the hard caps across the whole run
+- kept the stronger target-length and token-budget prompt rules from `v3.1.3`, but now backed them with runtime continuation logic for short first-pass outputs
 
 ### `v3.1.3`
 
