@@ -1,7 +1,7 @@
-tunnel: YOUR_TUNNEL_ID
-credentials-file: /etc/cloudflared/YOUR_TUNNEL_ID.json
+tunnel: $CLOUDFLARE_TUNNEL_UUID
+credentials-file: /etc/cloudflared/$CLOUDFLARE_TUNNEL_UUID.json
 
 ingress:
-  - hostname: ollama.example.com
+  - hostname: $CLOUDFLARE_OLLAMA_SUBDOMAIN.$CLOUDFLARE_TUNNEL_DOMAIN
     service: http://localhost:11434
   - service: http_status:404

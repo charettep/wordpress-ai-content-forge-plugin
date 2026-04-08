@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.6.7`.
+The current packaged release is `v2.6.8`.
 
 ## Features
 
@@ -63,7 +63,7 @@ The current packaged release is `v2.6.7`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.6.7.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.6.8.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -121,15 +121,21 @@ This repo includes an optional Docker-based WordPress development stack for loca
 
 The setup script:
 
+- starts from the tracked `.env.example` template
+- creates a local `.env` if it does not exist yet
+- preserves existing `.env` values when you re-run it
+- generates secure random MariaDB passwords, root password, and WordPress admin password for blank fields
+- generates unique local MariaDB database and username defaults for blank fields
 - prompts for database credentials, site ports, and WordPress admin details
-- writes those values to a local `.env`
+- writes those values back to the local `.env`
 - starts the Compose stack
 - installs WordPress if needed
 - installs and activates the latest built `ai-content-forge-v*.zip` from the repo root
 
 Notes:
 
-- `docker-compose.yml` reads values from `.env`, and `.env.example` shows the available variables.
+- `docker-compose.yml` reads values from `.env`, and `.env.example` is the committed template for the variables that the local helper scripts actually use.
+- `.env` is gitignored and intended only for local machine-specific values and secrets.
 - The site URL is `http://localhost:<SITE_PORT>`.
 - The phpMyAdmin URL is `http://localhost:<PMA_PORT>`.
 - The plugin repo is mounted into the containers as a read-only workspace at `/workspace/ai-content-forge`, not as the live plugin directory.
@@ -196,6 +202,7 @@ Recommended starting points:
 
 The helper script can now:
 
+- read saved defaults from `.env.example` and `.env`
 - verify your local Ollama endpoint first
 - install `cloudflared` and `jq` on Debian/Ubuntu when missing
 - find the correct Cloudflare zone and account from your domain
@@ -207,6 +214,7 @@ The helper script can now:
 - create a new Cloudflare Access service token
 - create a Service Auth policy for that token
 - enable single-header mode for the Access app
+- save the Cloudflare/Ollama defaults it used back into `.env`
 - test the final protected Ollama endpoint
 - print the exact values to paste into WordPress
 
@@ -215,6 +223,20 @@ Run it like this:
 ```bash
 ./scripts/ollama-cloudflare-wizard.sh
 ```
+
+The wizard stores and reuses these local defaults in `.env`:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_ZONE_ID`
+- `CLOUDFLARE_TUNNEL_NAME`
+- `CLOUDFLARE_TUNNEL_DOMAIN`
+- `CLOUDFLARE_OLLAMA_SUBDOMAIN`
+- `CLOUDFLARE_ACCESS_APP_NAME`
+- `CLOUDFLARE_SERVICE_TOKEN_NAME`
+- `CLOUDFLARE_SERVICE_TOKEN_DURATION`
+- `CLOUDFLARE_ACCESS_HEADER_NAME`
+- `OLLAMA_LOCAL_URL`
 
 The script supports two permission modes.
 
@@ -542,7 +564,7 @@ The script:
 
 - requires the Gutenberg build to exist first
 - stages the plugin under the correct runtime folder name: `ai-content-forge`
-- creates a clean versioned archive such as `ai-content-forge-v2.6.7.zip`
+- creates a clean versioned archive such as `ai-content-forge-v2.6.8.zip`
 - includes only runtime plugin files needed for installation
 - refuses to overwrite an existing archive for the same version
 - excludes development-only directories such as `node_modules`
@@ -613,6 +635,12 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.6.8`
+
+- centralized local `.env` parsing and updates in a shared shell helper so the Docker and Cloudflare scripts now reuse the same template and write path
+- updated `docker-setup.sh` to seed `.env` from `.env.example`, preserve existing values, and generate secure local database/admin secrets instead of relying on placeholder credentials
+- updated the Cloudflare wizard to read defaults from `.env`, persist the Cloudflare values it uses back into `.env`, and document the local-secret workflow more clearly
 
 ### `v2.6.7`
 

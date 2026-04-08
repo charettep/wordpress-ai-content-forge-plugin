@@ -2,11 +2,21 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ROOT_DIR}/.env"
+ENV_TEMPLATE="${ROOT_DIR}/.env.example"
+ENV_LIB="${ROOT_DIR}/scripts/lib/env.sh"
 PLUGIN_SLUG="ai-content-forge"
 CONTAINER_PLUGIN_REPO="/workspace/ai-content-forge"
 WP="docker compose run --rm --no-deps wpcli wp"
 
 cd "${ROOT_DIR}"
+
+if [[ -f "${ENV_LIB}" ]]; then
+	# shellcheck source=./lib/env.sh
+	source "${ENV_LIB}"
+	env_load_file "${ENV_TEMPLATE}" SITE_PORT WP_ADMIN_USERNAME
+	env_load_file "${ENV_FILE}" SITE_PORT WP_ADMIN_USERNAME
+fi
 
 if ! command -v docker >/dev/null 2>&1; then
 	echo "Docker is required but was not found in PATH." >&2
@@ -106,3 +116,7 @@ wait_for_wordpress_install
 echo
 
 ${WP} plugin install "${CONTAINER_PLUGIN_REPO}/${ZIP_FILE}" --force --activate
+
+if [[ -n "${SITE_PORT:-}" ]]; then
+	echo "Plugin updated in the local Docker site: http://localhost:${SITE_PORT}/wp-admin/plugins.php"
+fi

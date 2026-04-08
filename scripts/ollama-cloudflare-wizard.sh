@@ -4,8 +4,33 @@ set -euo pipefail
 CF_API_BASE="https://api.cloudflare.com/client/v4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ENV_FILE="${ROOT_DIR}/.env"
+ENV_TEMPLATE="${ROOT_DIR}/.env.example"
+ENV_LIB="${ROOT_DIR}/scripts/lib/env.sh"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 OUTPUT_DIR_DEFAULT="${PWD}/ollama-cloudflare-setup-${TIMESTAMP}"
+WIZARD_ENV_KEYS=(
+    CLOUDFLARE_ACCOUNT_ID
+    CLOUDFLARE_ZONE_ID
+    CLOUDFLARE_API_TOKEN
+    CLOUDFLARE_TUNNEL_NAME
+    CLOUDFLARE_TUNNEL_DOMAIN
+    CLOUDFLARE_OLLAMA_SUBDOMAIN
+    CLOUDFLARE_ACCESS_APP_NAME
+    CLOUDFLARE_SERVICE_TOKEN_NAME
+    CLOUDFLARE_SERVICE_TOKEN_DURATION
+    CLOUDFLARE_ACCESS_HEADER_NAME
+    OLLAMA_LOCAL_URL
+    OLLAMA_HOST_TARGET
+)
+
+if [[ ! -f "${ENV_LIB}" ]]; then
+    echo "Missing env helper library: ${ENV_LIB}" >&2
+    exit 1
+fi
+
+# shellcheck source=./lib/env.sh
+source "${ENV_LIB}"
 
 print_permissions() {
     cat <<'EOF'
@@ -40,6 +65,7 @@ Usage:
   ./scripts/ollama-cloudflare-wizard.sh --permissions
 
 What it does:
+  - reads saved defaults from .env.example and .env when available
   - verifies the local Ollama endpoint
   - installs cloudflared and jq on Debian/Ubuntu when needed
   - accepts ACCOUNT_ID and ZONE_ID manually to avoid requiring Zone Read
@@ -49,6 +75,7 @@ What it does:
   - creates or reuses the Cloudflare Access app
   - creates a service token and Service Auth policy
   - enables single-header mode
+  - saves the Cloudflare/Ollama defaults it used back into .env
   - tests the final public Ollama endpoint
   - prints the exact WordPress values to paste into AI Content Forge
 
@@ -83,6 +110,22 @@ prompt_secret() {
     read -r -s -p "${label}: " input
     printf '\n'
     printf -v "${var_name}" '%s' "${input}"
+}
+
+prompt_secret_with_default() {
+    local var_name="$1"
+    local label="$2"
+    local current_default="$3"
+    local input=""
+
+    if [[ -n "${current_default}" ]]; then
+        read -r -s -p "${label} [saved in .env, press Enter to keep]: " input
+    else
+        read -r -s -p "${label}: " input
+    fi
+
+    printf '\n'
+    printf -v "${var_name}" '%s' "${input:-${current_default}}"
 }
 
 yes_no_prompt() {
@@ -120,6 +163,30 @@ save_json() {
     local json_payload="$2"
 
     printf '%s\n' "${json_payload}" > "${target_file}"
+}
+
+load_wizard_env_defaults() {
+    env_load_file "${ENV_TEMPLATE}" "${WIZARD_ENV_KEYS[@]}"
+    env_load_file "${ENV_FILE}" "${WIZARD_ENV_KEYS[@]}"
+
+    if [[ -z "${OLLAMA_LOCAL_URL:-}" && -n "${OLLAMA_HOST_TARGET:-}" ]]; then
+        OLLAMA_LOCAL_URL="http://${OLLAMA_HOST_TARGET}"
+    fi
+}
+
+persist_wizard_env() {
+    env_ensure_file "${ENV_FILE}" "${ENV_TEMPLATE}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_API_TOKEN" "${CLOUDFLARE_API_TOKEN:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_TUNNEL_DOMAIN" "${CLOUDFLARE_TUNNEL_DOMAIN:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_OLLAMA_SUBDOMAIN" "${CLOUDFLARE_OLLAMA_SUBDOMAIN:-}"
+    env_set "${ENV_FILE}" "OLLAMA_LOCAL_URL" "${OLLAMA_LOCAL_URL:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_TUNNEL_NAME" "${CLOUDFLARE_TUNNEL_NAME:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_ACCESS_APP_NAME" "${CLOUDFLARE_ACCESS_APP_NAME:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_SERVICE_TOKEN_NAME" "${CLOUDFLARE_SERVICE_TOKEN_NAME:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_SERVICE_TOKEN_DURATION" "${CLOUDFLARE_SERVICE_TOKEN_DURATION:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_ACCESS_HEADER_NAME" "${CLOUDFLARE_ACCESS_HEADER_NAME:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_ACCOUNT_ID" "${ACCOUNT_ID:-}"
+    env_set "${ENV_FILE}" "CLOUDFLARE_ZONE_ID" "${ZONE_ID:-}"
 }
 
 cf_api() {
@@ -267,7 +334,7 @@ wait_for_public_endpoint() {
     local attempts=0
     local max_attempts=30
 
-    until curl -fsS -H "${ACCESS_HEADER_NAME}: ${auth_header}" "${url}" >/dev/null 2>&1; do
+    until curl -fsS -H "${CLOUDFLARE_ACCESS_HEADER_NAME}: ${auth_header}" "${url}" >/dev/null 2>&1; do
         (( attempts += 1 ))
         if (( attempts >= max_attempts )); then
             return 1
@@ -302,28 +369,32 @@ esac
 
 print_permissions
 
-prompt_secret "CLOUDFLARE_API_TOKEN" "Paste your Cloudflare API token"
-prompt_with_default "MAIN_DOMAIN" "Your main domain name already on Cloudflare" "example.com"
-prompt_with_default "OLLAMA_SUBDOMAIN" "Subdomain to use for Ollama" "ollama"
-prompt_with_default "LOCAL_OLLAMA_URL" "Local Ollama URL that cloudflared should reach" "http://localhost:11434"
-prompt_with_default "TUNNEL_NAME" "Tunnel name" "home-ollama"
-prompt_with_default "ACCESS_APP_NAME" "Access app name" "Ollama API"
-prompt_with_default "SERVICE_TOKEN_NAME" "Access service token name" "ai-content-forge-ollama"
-prompt_with_default "SERVICE_TOKEN_DURATION" "Service token duration" "8760h"
-prompt_with_default "ACCESS_HEADER_NAME" "Header name for single-header auth" "Authorization"
+load_wizard_env_defaults
+
+prompt_secret_with_default "CLOUDFLARE_API_TOKEN" "Paste your Cloudflare API token" "${CLOUDFLARE_API_TOKEN:-}"
+prompt_with_default "CLOUDFLARE_TUNNEL_DOMAIN" "Your main domain name already on Cloudflare" "${CLOUDFLARE_TUNNEL_DOMAIN:-example.com}"
+prompt_with_default "CLOUDFLARE_OLLAMA_SUBDOMAIN" "Subdomain to use for Ollama" "${CLOUDFLARE_OLLAMA_SUBDOMAIN:-ollama}"
+prompt_with_default "OLLAMA_LOCAL_URL" "Local Ollama URL that cloudflared should reach" "${OLLAMA_LOCAL_URL:-http://localhost:11434}"
+prompt_with_default "CLOUDFLARE_TUNNEL_NAME" "Tunnel name" "${CLOUDFLARE_TUNNEL_NAME:-home-ollama}"
+prompt_with_default "CLOUDFLARE_ACCESS_APP_NAME" "Access app name" "${CLOUDFLARE_ACCESS_APP_NAME:-Ollama API}"
+prompt_with_default "CLOUDFLARE_SERVICE_TOKEN_NAME" "Access service token name" "${CLOUDFLARE_SERVICE_TOKEN_NAME:-ai-content-forge-ollama}"
+prompt_with_default "CLOUDFLARE_SERVICE_TOKEN_DURATION" "Service token duration" "${CLOUDFLARE_SERVICE_TOKEN_DURATION:-8760h}"
+prompt_with_default "CLOUDFLARE_ACCESS_HEADER_NAME" "Header name for single-header auth" "${CLOUDFLARE_ACCESS_HEADER_NAME:-Authorization}"
 prompt_with_default "OUTPUT_DIR" "Directory for saved results" "${OUTPUT_DIR_DEFAULT}"
 
-OLLAMA_HOSTNAME="${OLLAMA_SUBDOMAIN}.${MAIN_DOMAIN}"
+OLLAMA_HOSTNAME="${CLOUDFLARE_OLLAMA_SUBDOMAIN}.${CLOUDFLARE_TUNNEL_DOMAIN}"
 PUBLIC_OLLAMA_URL="https://${OLLAMA_HOSTNAME}"
 mkdir -p "${OUTPUT_DIR}"
 
 if yes_no_prompt "Do you want to enter ACCOUNT_ID and ZONE_ID manually to avoid requiring Zone Read?" "y"; then
-    prompt_with_default "ACCOUNT_ID" "Cloudflare ACCOUNT_ID" "${ACCOUNT_ID:-}"
-    prompt_with_default "ZONE_ID" "Cloudflare ZONE_ID for ${MAIN_DOMAIN}" "${ZONE_ID:-}"
+    prompt_with_default "ACCOUNT_ID" "Cloudflare ACCOUNT_ID" "${CLOUDFLARE_ACCOUNT_ID:-${ACCOUNT_ID:-}}"
+    prompt_with_default "ZONE_ID" "Cloudflare ZONE_ID for ${CLOUDFLARE_TUNNEL_DOMAIN}" "${CLOUDFLARE_ZONE_ID:-${ZONE_ID:-}}"
     DISCOVERY_MODE="manual_ids"
 else
     DISCOVERY_MODE="auto_detect"
 fi
+
+persist_wizard_env
 
 if yes_no_prompt "Run cloudflared as a system service on this machine?" "y"; then
     RUN_MODE="service"
@@ -344,8 +415,8 @@ require_command "cloudflared"
 require_root_if_needed
 
 print_heading "Checking local Ollama"
-if ! curl -fsS "${LOCAL_OLLAMA_URL}/api/tags" > "${OUTPUT_DIR}/local-ollama-tags.json"; then
-    echo "The local Ollama check failed at ${LOCAL_OLLAMA_URL}/api/tags." >&2
+if ! curl -fsS "${OLLAMA_LOCAL_URL}/api/tags" > "${OUTPUT_DIR}/local-ollama-tags.json"; then
+    echo "The local Ollama check failed at ${OLLAMA_LOCAL_URL}/api/tags." >&2
     echo "Fix Ollama first, then re-run this script." >&2
     exit 1
 fi
@@ -360,18 +431,22 @@ if [[ "${DISCOVERY_MODE}" == "manual_ids" ]]; then
     fi
 else
     print_heading "Finding zone and account automatically"
-    ZONES_JSON="$(cf_api_get_zones "${MAIN_DOMAIN}")"
+    ZONES_JSON="$(cf_api_get_zones "${CLOUDFLARE_TUNNEL_DOMAIN}")"
     save_json "${OUTPUT_DIR}/zones.json" "${ZONES_JSON}"
 
     ZONE_ID="$(jq -r '.result[0].id // empty' <<< "${ZONES_JSON}")"
     ACCOUNT_ID="$(jq -r '.result[0].account.id // empty' <<< "${ZONES_JSON}")"
 
     if [[ -z "${ZONE_ID}" || -z "${ACCOUNT_ID}" ]]; then
-        echo "Could not determine the zone ID or account ID from ${MAIN_DOMAIN}." >&2
+        echo "Could not determine the zone ID or account ID from ${CLOUDFLARE_TUNNEL_DOMAIN}." >&2
         echo "Either grant Zone Read and retry auto-detect, or rerun the script and enter ACCOUNT_ID and ZONE_ID manually." >&2
         exit 1
     fi
 fi
+
+CLOUDFLARE_ACCOUNT_ID="${ACCOUNT_ID}"
+CLOUDFLARE_ZONE_ID="${ZONE_ID}"
+persist_wizard_env
 
 echo "Zone ID: ${ZONE_ID}"
 echo "Account ID: ${ACCOUNT_ID}"
@@ -380,16 +455,16 @@ print_heading "Creating or reusing tunnel"
 TUNNELS_JSON="$(cf_api_list_tunnels "${ACCOUNT_ID}")"
 save_json "${OUTPUT_DIR}/tunnels.json" "${TUNNELS_JSON}"
 
-TUNNEL_ID="$(jq -r --arg name "${TUNNEL_NAME}" '.result[] | select(.name == $name) | .id' <<< "${TUNNELS_JSON}" | head -n 1)"
+TUNNEL_ID="$(jq -r --arg name "${CLOUDFLARE_TUNNEL_NAME}" '.result[] | select(.name == $name) | .id' <<< "${TUNNELS_JSON}" | head -n 1)"
 TUNNEL_TOKEN=""
 
 if [[ -n "${TUNNEL_ID}" ]]; then
-    echo "Reusing existing tunnel: ${TUNNEL_NAME} (${TUNNEL_ID})"
+    echo "Reusing existing tunnel: ${CLOUDFLARE_TUNNEL_NAME} (${TUNNEL_ID})"
     TUNNEL_TOKEN_RESPONSE="$(cf_api "GET" "/accounts/${ACCOUNT_ID}/cfd_tunnel/${TUNNEL_ID}/token")"
     save_json "${OUTPUT_DIR}/tunnel-token.json" "${TUNNEL_TOKEN_RESPONSE}"
     TUNNEL_TOKEN="$(jq -r '.result // empty' <<< "${TUNNEL_TOKEN_RESPONSE}")"
 else
-    CREATE_TUNNEL_PAYLOAD="$(jq -nc --arg name "${TUNNEL_NAME}" '{"name": $name, "config_src": "cloudflare"}')"
+    CREATE_TUNNEL_PAYLOAD="$(jq -nc --arg name "${CLOUDFLARE_TUNNEL_NAME}" '{"name": $name, "config_src": "cloudflare"}')"
     CREATE_TUNNEL_RESPONSE="$(cf_api "POST" "/accounts/${ACCOUNT_ID}/cfd_tunnel" "${CREATE_TUNNEL_PAYLOAD}")"
     save_json "${OUTPUT_DIR}/create-tunnel.json" "${CREATE_TUNNEL_RESPONSE}"
     TUNNEL_ID="$(jq -r '.result.id' <<< "${CREATE_TUNNEL_RESPONSE}")"
@@ -401,7 +476,7 @@ else
         TUNNEL_TOKEN="$(jq -r '.result // empty' <<< "${TUNNEL_TOKEN_RESPONSE}")"
     fi
 
-    echo "Created tunnel: ${TUNNEL_NAME} (${TUNNEL_ID})"
+    echo "Created tunnel: ${CLOUDFLARE_TUNNEL_NAME} (${TUNNEL_ID})"
 fi
 
 if [[ -z "${TUNNEL_TOKEN}" ]]; then
@@ -412,7 +487,7 @@ fi
 print_heading "Pushing tunnel ingress config"
 TUNNEL_CONFIG_PAYLOAD="$(jq -nc \
     --arg hostname "${OLLAMA_HOSTNAME}" \
-    --arg service "${LOCAL_OLLAMA_URL}" \
+    --arg service "${OLLAMA_LOCAL_URL}" \
     '{
         "config": {
             "ingress": [
@@ -476,9 +551,9 @@ ACCESS_APP_RESPONSE=""
 
 if [[ -z "${ACCESS_APP_ID}" ]]; then
     CREATE_ACCESS_APP_PAYLOAD="$(jq -nc \
-        --arg name "${ACCESS_APP_NAME}" \
+        --arg name "${CLOUDFLARE_ACCESS_APP_NAME}" \
         --arg domain "${OLLAMA_HOSTNAME}" \
-        --arg header "${ACCESS_HEADER_NAME}" \
+        --arg header "${CLOUDFLARE_ACCESS_HEADER_NAME}" \
         '{
             "name": $name,
             "domain": $domain,
@@ -493,13 +568,13 @@ if [[ -z "${ACCESS_APP_ID}" ]]; then
     save_json "${OUTPUT_DIR}/create-access-app.json" "${CREATE_ACCESS_APP_RESPONSE}"
     ACCESS_APP_ID="$(jq -r '.result.id' <<< "${CREATE_ACCESS_APP_RESPONSE}")"
     ACCESS_APP_RESPONSE="${CREATE_ACCESS_APP_RESPONSE}"
-    echo "Created Access app: ${ACCESS_APP_NAME} (${ACCESS_APP_ID})"
+    echo "Created Access app: ${CLOUDFLARE_ACCESS_APP_NAME} (${ACCESS_APP_ID})"
 else
     echo "Reusing existing Access app for ${OLLAMA_HOSTNAME}: ${ACCESS_APP_ID}"
     EXISTING_ACCESS_APP_RESPONSE="$(cf_api "GET" "/accounts/${ACCOUNT_ID}/access/apps/${ACCESS_APP_ID}")"
     save_json "${OUTPUT_DIR}/existing-access-app.json" "${EXISTING_ACCESS_APP_RESPONSE}"
     UPDATE_ACCESS_APP_PAYLOAD="$(jq -c \
-        --arg header "${ACCESS_HEADER_NAME}" \
+        --arg header "${CLOUDFLARE_ACCESS_HEADER_NAME}" \
         '.result | .read_service_tokens_from_header = $header' \
         <<< "${EXISTING_ACCESS_APP_RESPONSE}"
     )"
@@ -512,8 +587,8 @@ NEXT_POLICY_PRECEDENCE="$(jq -r '(.result.policies // []) | map(.precedence // 0
 
 print_heading "Creating Access service token"
 CREATE_SERVICE_TOKEN_PAYLOAD="$(jq -nc \
-    --arg name "${SERVICE_TOKEN_NAME}" \
-    --arg duration "${SERVICE_TOKEN_DURATION}" \
+    --arg name "${CLOUDFLARE_SERVICE_TOKEN_NAME}" \
+    --arg duration "${CLOUDFLARE_SERVICE_TOKEN_DURATION}" \
     '{
         "name": $name,
         "duration": $duration
@@ -553,12 +628,12 @@ AUTH_HEADER_VALUE="$(jq -cn \
 )"
 
 printf '%s\n' "Base URL: ${PUBLIC_OLLAMA_URL}" > "${OUTPUT_DIR}/wordpress-values.txt"
-printf '%s\n' "Access Header Name: ${ACCESS_HEADER_NAME}" >> "${OUTPUT_DIR}/wordpress-values.txt"
+printf '%s\n' "Access Header Name: ${CLOUDFLARE_ACCESS_HEADER_NAME}" >> "${OUTPUT_DIR}/wordpress-values.txt"
 printf '%s\n' "Access Header Value: ${AUTH_HEADER_VALUE}" >> "${OUTPUT_DIR}/wordpress-values.txt"
 
 print_heading "Testing the public Ollama endpoint"
 if wait_for_public_endpoint "${AUTH_HEADER_VALUE}" "${PUBLIC_OLLAMA_URL}/api/tags"; then
-    curl -fsS -H "${ACCESS_HEADER_NAME}: ${AUTH_HEADER_VALUE}" "${PUBLIC_OLLAMA_URL}/api/tags" > "${OUTPUT_DIR}/public-ollama-tags.json"
+    curl -fsS -H "${CLOUDFLARE_ACCESS_HEADER_NAME}: ${AUTH_HEADER_VALUE}" "${PUBLIC_OLLAMA_URL}/api/tags" > "${OUTPUT_DIR}/public-ollama-tags.json"
     TEST_STATUS="success"
     echo "Public test succeeded."
 else
@@ -583,7 +658,7 @@ Public test status: ${TEST_STATUS}
 Paste these into AI Content Forge -> Ollama:
 
 Base URL: ${PUBLIC_OLLAMA_URL}
-Access Header Name: ${ACCESS_HEADER_NAME}
+Access Header Name: ${CLOUDFLARE_ACCESS_HEADER_NAME}
 Access Header Value: ${AUTH_HEADER_VALUE}
 
 Saved files:

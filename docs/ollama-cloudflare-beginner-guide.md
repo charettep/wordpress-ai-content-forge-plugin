@@ -27,12 +27,14 @@ If you want one script to perform the Cloudflare work for you, run:
 
 That script can:
 
+- reuse defaults already saved in `.env`
 - create or reuse the tunnel
 - create or update the DNS record
 - create or reuse the Access app
 - create the service token
 - create the Service Auth policy
 - enable single-header mode
+- save the Cloudflare and Ollama values it used back into `.env`
 - test the public protected Ollama endpoint
 - print the final WordPress values
 
@@ -48,6 +50,12 @@ Minimum permissions when you provide `ACCOUNT_ID` and `ZONE_ID` manually:
 Optional extra permission only when you want the script to auto-detect the IDs from your domain:
 
 - `Zone Read`
+
+The script treats `.env` as a local-only convenience file:
+
+- `.env.example` is the committed template
+- `.env` is gitignored and stays on your machine
+- saved defaults such as your Cloudflare token, account ID, zone ID, tunnel name, and Ollama hostname are automatically reused the next time you run the wizard
 
 ## Quick Links
 

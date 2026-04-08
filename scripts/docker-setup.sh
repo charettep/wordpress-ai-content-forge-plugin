@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 ENV_TEMPLATE="${ROOT_DIR}/.env.example"
+ENV_LIB="${ROOT_DIR}/scripts/lib/env.sh"
 PLUGIN_SLUG="ai-content-forge"
 CONTAINER_PLUGIN_REPO="/workspace/ai-content-forge"
 ENV_KEYS=(
@@ -31,6 +32,19 @@ ENV_KEYS=(
 
 cd "${ROOT_DIR}"
 
+if [[ ! -f "${ENV_LIB}" ]]; then
+	echo "Missing env helper library: ${ENV_LIB}" >&2
+	exit 1
+fi
+
+if [[ ! -f "${ENV_TEMPLATE}" ]]; then
+	echo "Missing env template: ${ENV_TEMPLATE}" >&2
+	exit 1
+fi
+
+# shellcheck source=./lib/env.sh
+source "${ENV_LIB}"
+
 if [[ ! -t 0 ]]; then
 	echo "scripts/docker-setup.sh requires an interactive terminal." >&2
 	exit 1
@@ -56,112 +70,72 @@ prompt_var() {
 	printf -v "${key}" '%s' "${input:-${current_default}}"
 }
 
-escape_env_value() {
-	printf '%s' "$1" | sed -e 's/[\\$`"]/\\&/g'
+generate_secure_secret() {
+	if command -v openssl >/dev/null 2>&1; then
+		openssl rand -base64 36 | tr -d '\n' | tr '/+' 'AZ' | cut -c1-32
+	else
+		head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | cut -c1-32
+	fi
 }
 
-trim_whitespace() {
-	local value="$1"
+generate_safe_identifier() {
+	local prefix="$1"
+	local suffix=""
 
-	value="${value#"${value%%[![:space:]]*}"}"
-	value="${value%"${value##*[![:space:]]}"}"
-
-	printf '%s' "${value}"
-}
-
-parse_env_value() {
-	local value
-
-	value="$(trim_whitespace "$1")"
-
-	if [[ "${value}" =~ ^\"(.*)\"$ ]]; then
-		value="${BASH_REMATCH[1]}"
-		value="${value//\\\\/\\}"
-		value="${value//\\\"/\"}"
-		value="${value//\\\$/\$}"
-		value="${value//\\\`/\`}"
-	elif [[ "${value}" =~ ^\'(.*)\'$ ]]; then
-		value="${BASH_REMATCH[1]}"
+	if command -v openssl >/dev/null 2>&1; then
+		suffix="$(openssl rand -hex 4 | tr '[:upper:]' '[:lower:]')"
+	else
+		suffix="$(head -c 16 /dev/urandom | base64 | tr -dc 'a-z0-9' | cut -c1-8)"
 	fi
 
-	printf '%s' "${value}"
+	printf '%s_%s' "${prefix}" "${suffix}"
 }
 
-is_supported_env_key() {
-	local target="$1"
-	local key=""
+set_default_if_blank() {
+	local key="$1"
+	local value="$2"
 
-	for key in "${ENV_KEYS[@]}"; do
-		if [[ "${key}" == "${target}" ]]; then
-			return 0
-		fi
-	done
-
-	return 1
-}
-
-load_env_file() {
-	local file="$1"
-	local line=""
-	local key=""
-	local value=""
-
-	if [[ ! -f "${file}" ]]; then
-		return
-	fi
-
-	while IFS= read -r line || [[ -n "${line}" ]]; do
-		line="$(trim_whitespace "${line}")"
-
-		if [[ -z "${line}" || "${line}" == \#* ]]; then
-			continue
-		fi
-
-		if [[ ! "${line}" =~ ^([A-Z0-9_]+)=(.*)$ ]]; then
-			continue
-		fi
-
-		key="${BASH_REMATCH[1]}"
-		value="${BASH_REMATCH[2]}"
-
-		if ! is_supported_env_key "${key}"; then
-			continue
-		fi
-
-		value="$(parse_env_value "${value}")"
+	if [[ -z "${!key:-}" ]]; then
 		printf -v "${key}" '%s' "${value}"
-		export "${key}"
-	done < "${file}"
+	fi
+}
+
+bootstrap_defaults() {
+	set_default_if_blank "SITE_PORT" "8080"
+	set_default_if_blank "PMA_PORT" "8081"
+
+	set_default_if_blank "MARIADB_DATABASE" "$(generate_safe_identifier "wordpress")"
+	set_default_if_blank "MARIADB_USER" "$(generate_safe_identifier "wpuser")"
+	set_default_if_blank "MARIADB_PASSWORD" "$(generate_secure_secret)"
+	set_default_if_blank "MARIADB_ROOT_PASSWORD" "$(generate_secure_secret)"
+
+	set_default_if_blank "WORDPRESS_DB_HOST" "db"
+	set_default_if_blank "WORDPRESS_DB_NAME" "${MARIADB_DATABASE}"
+	set_default_if_blank "WORDPRESS_DB_USER" "${MARIADB_USER}"
+	set_default_if_blank "WORDPRESS_DB_PASSWORD" "${MARIADB_PASSWORD}"
+
+	set_default_if_blank "PMA_HOST" "db"
+	set_default_if_blank "PMA_USER" "${MARIADB_USER}"
+	set_default_if_blank "PMA_PASSWORD" "${MARIADB_PASSWORD}"
+
+	set_default_if_blank "WP_ADMIN_USERNAME" "admin"
+	set_default_if_blank "WP_ADMIN_PASSWORD" "$(generate_secure_secret)"
+	set_default_if_blank "WP_ADMIN_EMAIL" "admin@example.test"
+	set_default_if_blank "WP_SITE_TITLE" "AI Content Forge Development"
+	set_default_if_blank "WP_BLOG_DESCRIPTION" "WordPress development environment"
+
+	set_default_if_blank "OLLAMA_PROXY_PORT" "11435"
+	set_default_if_blank "OLLAMA_HOST_TARGET" "127.0.0.1:11434"
 }
 
 write_env_file() {
-	cat > "${ENV_FILE}" <<EOF
-SITE_PORT="$(escape_env_value "${SITE_PORT}")"
-PMA_PORT="$(escape_env_value "${PMA_PORT}")"
+	local key=""
 
-MARIADB_DATABASE="$(escape_env_value "${MARIADB_DATABASE}")"
-MARIADB_USER="$(escape_env_value "${MARIADB_USER}")"
-MARIADB_PASSWORD="$(escape_env_value "${MARIADB_PASSWORD}")"
-MARIADB_ROOT_PASSWORD="$(escape_env_value "${MARIADB_ROOT_PASSWORD}")"
+	env_ensure_file "${ENV_FILE}" "${ENV_TEMPLATE}"
 
-WORDPRESS_DB_HOST="$(escape_env_value "${WORDPRESS_DB_HOST}")"
-WORDPRESS_DB_NAME="$(escape_env_value "${WORDPRESS_DB_NAME}")"
-WORDPRESS_DB_USER="$(escape_env_value "${WORDPRESS_DB_USER}")"
-WORDPRESS_DB_PASSWORD="$(escape_env_value "${WORDPRESS_DB_PASSWORD}")"
-
-PMA_HOST="$(escape_env_value "${PMA_HOST}")"
-PMA_USER="$(escape_env_value "${PMA_USER}")"
-PMA_PASSWORD="$(escape_env_value "${PMA_PASSWORD}")"
-
-WP_ADMIN_USERNAME="$(escape_env_value "${WP_ADMIN_USERNAME}")"
-WP_ADMIN_PASSWORD="$(escape_env_value "${WP_ADMIN_PASSWORD}")"
-WP_ADMIN_EMAIL="$(escape_env_value "${WP_ADMIN_EMAIL}")"
-WP_SITE_TITLE="$(escape_env_value "${WP_SITE_TITLE}")"
-WP_BLOG_DESCRIPTION="$(escape_env_value "${WP_BLOG_DESCRIPTION}")"
-
-OLLAMA_PROXY_PORT="$(escape_env_value "${OLLAMA_PROXY_PORT}")"
-OLLAMA_HOST_TARGET="$(escape_env_value "${OLLAMA_HOST_TARGET}")"
-EOF
+	for key in "${ENV_KEYS[@]}"; do
+		env_set "${ENV_FILE}" "${key}" "${!key:-}"
+	done
 }
 
 resolve_latest_plugin_zip() {
@@ -294,8 +268,9 @@ wait_for_wordpress_db() {
 	done
 }
 
-load_env_file "${ENV_TEMPLATE}"
-load_env_file "${ENV_FILE}"
+env_load_file "${ENV_TEMPLATE}" "${ENV_KEYS[@]}"
+env_load_file "${ENV_FILE}" "${ENV_KEYS[@]}"
+bootstrap_defaults
 
 prompt_var "SITE_PORT" "WordPress site port"
 prompt_var "PMA_PORT" "phpMyAdmin port"
@@ -315,6 +290,8 @@ prompt_var "WP_ADMIN_PASSWORD" "WordPress admin password"
 prompt_var "WP_ADMIN_EMAIL" "WordPress admin email"
 prompt_var "WP_SITE_TITLE" "WordPress site title"
 prompt_var "WP_BLOG_DESCRIPTION" "WordPress blog description"
+prompt_var "OLLAMA_PROXY_PORT" "Ollama proxy port for the Docker stack"
+prompt_var "OLLAMA_HOST_TARGET" "Local Ollama host target for the Docker stack"
 
 write_env_file
 

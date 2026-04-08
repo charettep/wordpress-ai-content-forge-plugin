@@ -4,6 +4,7 @@
 .claude/
 *.log
 *.zip
+# Local machine secrets and helper-script state
 .env
 npm-debug.log*
 yarn-debug.log*
