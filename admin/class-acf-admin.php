@@ -58,6 +58,17 @@ class ACF_Admin {
     public static function render_page(): void {
         $settings = ACF_Settings::all();
         $opt      = ACF_Settings::OPTION_KEY;
+
+        // ── Summary strip data ─────────────────────────────────────────────────
+        $provider_labels  = [ 'claude' => 'Anthropic Claude', 'openai' => 'OpenAI', 'ollama' => 'Ollama' ];
+        $default_provider = $settings['default_provider'] ?? 'claude';
+        $default_model    = match ( $default_provider ) {
+            'claude' => $settings['claude_model'] ?? '',
+            'openai' => $settings['openai_model'] ?? '',
+            'ollama' => $settings['ollama_model'] ?? '',
+            default  => '',
+        };
+
         $prompts  = [
             'post_content' => [
                 'label'       => __( 'Post Content Prompt', 'ai-content-forge' ),
@@ -105,199 +116,327 @@ class ACF_Admin {
                 <?php esc_html_e( 'AI Content Forge', 'ai-content-forge' ); ?>
             </h1>
 
-            <div class="notice notice-info inline">
-                <p>
-                    <?php esc_html_e( 'Release packages are built for direct installation, update, and activation from the WordPress wp-admin upload flow. OpenAI and Claude work on self-hosted and managed WordPress sites when the server can make outbound HTTPS requests. Ollama works anywhere the WordPress/PHP runtime can reach the configured Ollama endpoint, including remote Ollama servers exposed securely through Cloudflare Tunnel or another authenticated proxy.', 'ai-content-forge' ); ?>
-                </p>
-            </div>
-
             <?php settings_errors(); ?>
 
-            <form method="post" action="options.php">
-                <?php
-                settings_fields( 'acf_settings_group' );
-                ?>
-
-                <!-- ── Provider Default ───────────────────────────────── -->
-                <div class="acf-card">
-                    <h2><?php esc_html_e( 'Default Provider', 'ai-content-forge' ); ?></h2>
-                    <p class="description"><?php esc_html_e( 'Used when no per-use override is selected.', 'ai-content-forge' ); ?></p>
-                    <div class="acf-provider-cards">
-                        <?php foreach ( ACF_Settings::PROVIDERS as $slug ) :
-                            $checked = checked( $settings['default_provider'], $slug, false );
-                            $labels  = [ 'claude' => 'Anthropic Claude', 'openai' => 'OpenAI', 'ollama' => 'Ollama' ];
-                            $icons   = [ 'claude' => '🟠', 'openai' => '🟢', 'ollama' => '🔵' ];
-                        ?>
-                        <label class="acf-provider-card <?php echo $settings['default_provider'] === $slug ? 'selected' : ''; ?>">
-                            <input type="radio" name="<?php echo esc_attr( $opt ); ?>[default_provider]"
-                                   value="<?php echo esc_attr( $slug ); ?>" <?php echo $checked; ?>>
-                            <span class="acf-provider-icon"><?php echo $icons[ $slug ]; ?></span>
-                            <span class="acf-provider-name"><?php echo esc_html( $labels[ $slug ] ); ?></span>
-                        </label>
-                        <?php endforeach; ?>
-                    </div>
+            <!-- ── Summary strip ─────────────────────────────────────── -->
+            <div class="acf-summary-strip">
+                <div class="acf-summary-cell">
+                    <span class="acf-summary-label"><?php esc_html_e( 'Default', 'ai-content-forge' ); ?></span>
+                    <span class="acf-summary-value">
+                        <?php echo esc_html( $provider_labels[ $default_provider ] ?? $default_provider ); ?>
+                        <?php if ( $default_model ) : ?>
+                            <span class="acf-summary-model">— <?php echo esc_html( $default_model ); ?></span>
+                        <?php endif; ?>
+                    </span>
                 </div>
-
-                <!-- ── Claude ─────────────────────────────────────────── -->
-                <div class="acf-card acf-provider-section" id="section-claude">
-                    <div class="acf-provider-header">
-                        <h2>🟠 <?php esc_html_e( 'Anthropic Claude', 'ai-content-forge' ); ?></h2>
-                        <span class="acf-provider-status" id="status-claude" aria-live="polite"></span>
-                    </div>
-                    <table class="form-table" role="presentation">
-                        <tr>
-                            <th><?php esc_html_e( 'API Key', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="password" class="regular-text acf-api-key-input"
-                                       data-provider="claude"
-                                       name="<?php echo esc_attr( $opt ); ?>[claude_api_key]"
-                                       value="<?php echo esc_attr( $settings['claude_api_key'] ); ?>" autocomplete="off">
-                                <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value. Works on self-hosted and managed WordPress sites when the server can reach the Anthropic API over HTTPS.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <select class="regular-text acf-model-select"
-                                        data-provider="claude"
-                                        data-placeholder="<?php esc_attr_e( 'Enter an API key to load models', 'ai-content-forge' ); ?>"
-                                        data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
-                                        data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
-                                        name="<?php echo esc_attr( $opt ); ?>[claude_model]">
-                                    <?php if ( ! empty( $settings['claude_api_key'] ) && ! empty( $settings['claude_model'] ) ) : ?>
-                                        <option value="<?php echo esc_attr( $settings['claude_model'] ); ?>" selected>
-                                            <?php echo esc_html( $settings['claude_model'] ); ?>
-                                        </option>
-                                    <?php else : ?>
-                                        <option value="" selected><?php esc_html_e( 'Enter an API key to load models', 'ai-content-forge' ); ?></option>
-                                    <?php endif; ?>
-                                </select>
-                                <p class="description"><?php esc_html_e( 'Available Claude models are loaded automatically from the Anthropic Models API.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                    </table>
+                <div class="acf-summary-cell acf-summary-badges">
+                    <?php foreach ( ACF_Settings::PROVIDERS as $slug ) : ?>
+                        <span class="acf-summary-badge" data-summary-provider="<?php echo esc_attr( $slug ); ?>">
+                            <span class="acf-badge-dot"></span>
+                            <?php echo esc_html( $provider_labels[ $slug ] ?? $slug ); ?>
+                        </span>
+                    <?php endforeach; ?>
                 </div>
-
-                <!-- ── OpenAI ─────────────────────────────────────────── -->
-                <div class="acf-card acf-provider-section" id="section-openai">
-                    <div class="acf-provider-header">
-                        <h2>🟢 <?php esc_html_e( 'OpenAI', 'ai-content-forge' ); ?></h2>
-                        <span class="acf-provider-status" id="status-openai" aria-live="polite"></span>
-                    </div>
-                    <table class="form-table" role="presentation">
-                        <tr>
-                            <th><?php esc_html_e( 'API Key', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="password" class="regular-text acf-api-key-input"
-                                       data-provider="openai"
-                                       name="<?php echo esc_attr( $opt ); ?>[openai_api_key]"
-                                       value="<?php echo esc_attr( $settings['openai_api_key'] ); ?>" autocomplete="off">
-                                <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value. Works on self-hosted and managed WordPress sites when the server can reach the OpenAI API over HTTPS.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <select class="regular-text acf-model-select"
-                                        data-provider="openai"
-                                        data-placeholder="<?php esc_attr_e( 'Enter an API key to load models', 'ai-content-forge' ); ?>"
-                                        data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
-                                        data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
-                                        name="<?php echo esc_attr( $opt ); ?>[openai_model]">
-                                    <?php if ( ! empty( $settings['openai_api_key'] ) && ! empty( $settings['openai_model'] ) ) : ?>
-                                        <option value="<?php echo esc_attr( $settings['openai_model'] ); ?>" selected>
-                                            <?php echo esc_html( $settings['openai_model'] ); ?>
-                                        </option>
-                                    <?php else : ?>
-                                        <option value="" selected><?php esc_html_e( 'Enter an API key to load models', 'ai-content-forge' ); ?></option>
-                                    <?php endif; ?>
-                                </select>
-                                <p class="description"><?php esc_html_e( 'Available OpenAI text-generation models are loaded automatically from the Models API.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                    </table>
+                <div class="acf-summary-cell">
+                    <span class="acf-summary-label"><?php esc_html_e( 'Tokens', 'ai-content-forge' ); ?></span>
+                    <span class="acf-summary-value"><?php echo esc_html( number_format_i18n( (int) ( $settings['max_output_tokens'] ?? 1500 ) ) ); ?></span>
                 </div>
-
-                <!-- ── Ollama ─────────────────────────────────────────── -->
-                <div class="acf-card acf-provider-section" id="section-ollama">
-                    <div class="acf-provider-header">
-                        <h2>🔵 <?php esc_html_e( 'Ollama', 'ai-content-forge' ); ?></h2>
-                        <span class="acf-provider-status" id="status-ollama" aria-live="polite"></span>
-                    </div>
-                    <table class="form-table" role="presentation">
-                        <tr>
-                            <th><?php esc_html_e( 'Base URL', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="url" class="regular-text acf-base-url-input"
-                                       data-provider="ollama"
-                                       name="<?php echo esc_attr( $opt ); ?>[ollama_url]"
-                                       value="<?php echo esc_attr( $settings['ollama_url'] ); ?>">
-                                <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value.', 'ai-content-forge' ); ?> <?php esc_html_e( 'Default:', 'ai-content-forge' ); ?> <code>http://localhost:11434</code>. <?php esc_html_e( 'For managed or cloud-hosted WordPress, use a remote Ollama hostname that the WordPress server can reach, such as a Cloudflare Tunnel hostname.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?php esc_html_e( 'Access Header Name', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="text" class="regular-text acf-ollama-auth-input"
-                                       data-provider="ollama"
-                                       data-role="header-name"
-                                       name="<?php echo esc_attr( $opt ); ?>[ollama_auth_header_name]"
-                                       value="<?php echo esc_attr( $settings['ollama_auth_header_name'] ?? '' ); ?>"
-                                       placeholder="Authorization"
-                                       autocomplete="off">
-                                <p class="description"><?php esc_html_e( 'Optional. Paste the exact header name required by your remote Ollama gateway. For Cloudflare Access single-header mode, copy the header name exactly as Cloudflare shows it. If you leave this blank but provide a value below, the plugin will use Authorization.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?php esc_html_e( 'Access Header Value', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="password" class="regular-text acf-ollama-auth-input"
-                                       data-provider="ollama"
-                                       data-role="header-value"
-                                       name="<?php echo esc_attr( $opt ); ?>[ollama_auth_header_value]"
-                                       value="<?php echo esc_attr( $settings['ollama_auth_header_value'] ?? '' ); ?>"
-                                       placeholder='{"cf-access-client-id":"...","cf-access-client-secret":"..."}'
-                                       autocomplete="off">
-                                <p class="description"><?php esc_html_e( 'Optional. Paste the exact header value required by your proxy, gateway, or Cloudflare Access single-header setup. The plugin sends this value on Ollama model discovery, generation, streaming, and stop requests.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <select class="regular-text acf-model-select"
-                                        data-provider="ollama"
-                                        data-placeholder="<?php esc_attr_e( 'Enter a Base URL to load models', 'ai-content-forge' ); ?>"
-                                        data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
-                                        data-empty-label="<?php esc_attr_e( 'No models returned by this Ollama server', 'ai-content-forge' ); ?>"
-                                        name="<?php echo esc_attr( $opt ); ?>[ollama_model]">
-                                    <?php if ( ! empty( $settings['ollama_url'] ) && ! empty( $settings['ollama_model'] ) ) : ?>
-                                        <option value="<?php echo esc_attr( $settings['ollama_model'] ); ?>" selected>
-                                            <?php echo esc_html( $settings['ollama_model'] ); ?>
-                                        </option>
-                                    <?php else : ?>
-                                        <option value="" selected><?php esc_html_e( 'Enter a Base URL to load models', 'ai-content-forge' ); ?></option>
-                                    <?php endif; ?>
-                                </select>
-                                <p class="description"><?php esc_html_e( 'Available Ollama models are loaded automatically from the Ollama tags API after the base URL is detected and validated.', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                    </table>
+                <div class="acf-summary-cell">
+                    <span class="acf-summary-label"><?php esc_html_e( 'Temp', 'ai-content-forge' ); ?></span>
+                    <span class="acf-summary-value"><?php echo esc_html( $settings['temperature'] ?? '0.7' ); ?></span>
                 </div>
+            </div>
 
-                <div class="acf-card acf-setup-guide" id="acf-ollama-wizard">
-                    <h2><?php esc_html_e( 'Ollama Setup Wizard', 'ai-content-forge' ); ?></h2>
-                    <p class="description"><?php esc_html_e( 'This guide is written for people starting from zero. Follow it from top to bottom. If a step already matches your setup, skip only that step and continue with the next one.', 'ai-content-forge' ); ?></p>
+            <!-- ── Tab navigation ────────────────────────────────────── -->
+            <nav class="nav-tab-wrapper acf-tab-nav" aria-label="<?php esc_attr_e( 'Settings sections', 'ai-content-forge' ); ?>">
+                <a href="#" class="nav-tab" data-tab="providers"><?php esc_html_e( 'Providers', 'ai-content-forge' ); ?></a>
+                <a href="#" class="nav-tab" data-tab="generation"><?php esc_html_e( 'Generation', 'ai-content-forge' ); ?></a>
+                <a href="#" class="nav-tab" data-tab="prompts"><?php esc_html_e( 'Prompts', 'ai-content-forge' ); ?></a>
+                <a href="#" class="nav-tab" data-tab="ollama-setup"><?php esc_html_e( 'Ollama Setup', 'ai-content-forge' ); ?></a>
+            </nav>
 
-                    <div class="acf-guide-nav" aria-label="<?php esc_attr_e( 'Ollama guide sections', 'ai-content-forge' ); ?>">
-                        <a href="#acf-ollama-guide-choose"><?php esc_html_e( '1. Choose the right path', 'ai-content-forge' ); ?></a>
-                        <a href="#acf-ollama-guide-cloudflare"><?php esc_html_e( '2. Create Cloudflare + domain', 'ai-content-forge' ); ?></a>
-                        <a href="#acf-ollama-guide-ollama"><?php esc_html_e( '3. Install Ollama', 'ai-content-forge' ); ?></a>
-                        <a href="#acf-ollama-guide-cloudflared"><?php esc_html_e( '4. Install cloudflared', 'ai-content-forge' ); ?></a>
-                        <a href="#acf-ollama-guide-tunnel"><?php esc_html_e( '5. Create the tunnel', 'ai-content-forge' ); ?></a>
-                        <a href="#acf-ollama-guide-access"><?php esc_html_e( '6. Lock it down with Access', 'ai-content-forge' ); ?></a>
-                        <a href="#acf-ollama-guide-wordpress"><?php esc_html_e( '7. Paste values into WordPress', 'ai-content-forge' ); ?></a>
-                        <a href="#acf-ollama-guide-wsl"><?php esc_html_e( '8. WSL notes', 'ai-content-forge' ); ?></a>
+            <form method="post" action="options.php" id="acf-settings-form">
+                <?php settings_fields( 'acf_settings_group' ); ?>
+
+                <!-- ════════════════════════════════════════════════════ -->
+                <!-- Tab: Providers                                        -->
+                <!-- ════════════════════════════════════════════════════ -->
+                <div class="acf-tab-panel" data-panel="providers">
+
+                    <!-- ── Claude ──────────────────────────────────── -->
+                    <div class="acf-card acf-provider-section" id="section-claude">
+                        <div class="acf-provider-header">
+                            <h2><?php esc_html_e( 'Anthropic Claude', 'ai-content-forge' ); ?></h2>
+                            <span class="acf-provider-status" id="status-claude" aria-live="polite"></span>
+                        </div>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th><?php esc_html_e( 'API Key', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="password" class="regular-text acf-api-key-input"
+                                           data-provider="claude"
+                                           name="<?php echo esc_attr( $opt ); ?>[claude_api_key]"
+                                           value="<?php echo esc_attr( $settings['claude_api_key'] ); ?>" autocomplete="off">
+                                    <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value. Works on self-hosted and managed WordPress sites when the server can reach the Anthropic API over HTTPS.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <select class="regular-text acf-model-select"
+                                            data-provider="claude"
+                                            data-placeholder="<?php esc_attr_e( 'Enter an API key to load models', 'ai-content-forge' ); ?>"
+                                            data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
+                                            data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
+                                            name="<?php echo esc_attr( $opt ); ?>[claude_model]">
+                                        <?php if ( ! empty( $settings['claude_api_key'] ) && ! empty( $settings['claude_model'] ) ) : ?>
+                                            <option value="<?php echo esc_attr( $settings['claude_model'] ); ?>" selected>
+                                                <?php echo esc_html( $settings['claude_model'] ); ?>
+                                            </option>
+                                        <?php else : ?>
+                                            <option value="" selected><?php esc_html_e( 'Enter an API key to load models', 'ai-content-forge' ); ?></option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <p class="description"><?php esc_html_e( 'Available Claude models are loaded automatically from the Anthropic Models API.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
+
+                    <!-- ── OpenAI ──────────────────────────────────── -->
+                    <div class="acf-card acf-provider-section" id="section-openai">
+                        <div class="acf-provider-header">
+                            <h2><?php esc_html_e( 'OpenAI', 'ai-content-forge' ); ?></h2>
+                            <span class="acf-provider-status" id="status-openai" aria-live="polite"></span>
+                        </div>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th><?php esc_html_e( 'API Key', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="password" class="regular-text acf-api-key-input"
+                                           data-provider="openai"
+                                           name="<?php echo esc_attr( $opt ); ?>[openai_api_key]"
+                                           value="<?php echo esc_attr( $settings['openai_api_key'] ); ?>" autocomplete="off">
+                                    <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value. Works on self-hosted and managed WordPress sites when the server can reach the OpenAI API over HTTPS.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <select class="regular-text acf-model-select"
+                                            data-provider="openai"
+                                            data-placeholder="<?php esc_attr_e( 'Enter an API key to load models', 'ai-content-forge' ); ?>"
+                                            data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
+                                            data-empty-label="<?php esc_attr_e( 'No models returned for this API key', 'ai-content-forge' ); ?>"
+                                            name="<?php echo esc_attr( $opt ); ?>[openai_model]">
+                                        <?php if ( ! empty( $settings['openai_api_key'] ) && ! empty( $settings['openai_model'] ) ) : ?>
+                                            <option value="<?php echo esc_attr( $settings['openai_model'] ); ?>" selected>
+                                                <?php echo esc_html( $settings['openai_model'] ); ?>
+                                            </option>
+                                        <?php else : ?>
+                                            <option value="" selected><?php esc_html_e( 'Enter an API key to load models', 'ai-content-forge' ); ?></option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <p class="description"><?php esc_html_e( 'Available OpenAI text-generation models are loaded automatically from the Models API.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- ── Ollama ──────────────────────────────────── -->
+                    <div class="acf-card acf-provider-section" id="section-ollama">
+                        <div class="acf-provider-header">
+                            <h2><?php esc_html_e( 'Ollama', 'ai-content-forge' ); ?></h2>
+                            <span class="acf-provider-status" id="status-ollama" aria-live="polite"></span>
+                        </div>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th><?php esc_html_e( 'Base URL', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="url" class="regular-text acf-base-url-input"
+                                           data-provider="ollama"
+                                           name="<?php echo esc_attr( $opt ); ?>[ollama_url]"
+                                           value="<?php echo esc_attr( $settings['ollama_url'] ); ?>">
+                                    <p class="description"><?php esc_html_e( 'Connection is checked automatically as soon as this field has a value.', 'ai-content-forge' ); ?> <?php esc_html_e( 'Default:', 'ai-content-forge' ); ?> <code>http://localhost:11434</code>. <?php esc_html_e( 'For managed or cloud-hosted WordPress, use a remote Ollama hostname that the WordPress server can reach, such as a Cloudflare Tunnel hostname.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Access Header Name', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="text" class="regular-text acf-ollama-auth-input"
+                                           data-provider="ollama"
+                                           data-role="header-name"
+                                           name="<?php echo esc_attr( $opt ); ?>[ollama_auth_header_name]"
+                                           value="<?php echo esc_attr( $settings['ollama_auth_header_name'] ?? '' ); ?>"
+                                           placeholder="Authorization"
+                                           autocomplete="off">
+                                    <p class="description"><?php esc_html_e( 'Optional. Paste the exact header name required by your remote Ollama gateway. For Cloudflare Access single-header mode, copy the header name exactly as Cloudflare shows it. If you leave this blank but provide a value below, the plugin will use Authorization.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Access Header Value', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="password" class="regular-text acf-ollama-auth-input"
+                                           data-provider="ollama"
+                                           data-role="header-value"
+                                           name="<?php echo esc_attr( $opt ); ?>[ollama_auth_header_value]"
+                                           value="<?php echo esc_attr( $settings['ollama_auth_header_value'] ?? '' ); ?>"
+                                           placeholder='{"cf-access-client-id":"...","cf-access-client-secret":"..."}'
+                                           autocomplete="off">
+                                    <p class="description"><?php esc_html_e( 'Optional. Paste the exact header value required by your proxy, gateway, or Cloudflare Access single-header setup. The plugin sends this value on Ollama model discovery, generation, streaming, and stop requests.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Model', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <select class="regular-text acf-model-select"
+                                            data-provider="ollama"
+                                            data-placeholder="<?php esc_attr_e( 'Enter a Base URL to load models', 'ai-content-forge' ); ?>"
+                                            data-loading-label="<?php esc_attr_e( 'Loading available models…', 'ai-content-forge' ); ?>"
+                                            data-empty-label="<?php esc_attr_e( 'No models returned by this Ollama server', 'ai-content-forge' ); ?>"
+                                            name="<?php echo esc_attr( $opt ); ?>[ollama_model]">
+                                        <?php if ( ! empty( $settings['ollama_url'] ) && ! empty( $settings['ollama_model'] ) ) : ?>
+                                            <option value="<?php echo esc_attr( $settings['ollama_model'] ); ?>" selected>
+                                                <?php echo esc_html( $settings['ollama_model'] ); ?>
+                                            </option>
+                                        <?php else : ?>
+                                            <option value="" selected><?php esc_html_e( 'Enter a Base URL to load models', 'ai-content-forge' ); ?></option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <p class="description"><?php esc_html_e( 'Available Ollama models are loaded automatically from the Ollama tags API after the base URL is detected and validated.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+                        <p class="acf-provider-footer-link">
+                            <?php esc_html_e( 'Need to connect Ollama to a remote WordPress site?', 'ai-content-forge' ); ?>
+                            <a href="#" class="acf-tab-link" data-target-tab="ollama-setup"><?php esc_html_e( 'Open Setup Guide →', 'ai-content-forge' ); ?></a>
+                        </p>
+                    </div>
+
+                </div><!-- /tab: providers -->
+
+                <!-- ════════════════════════════════════════════════════ -->
+                <!-- Tab: Generation                                       -->
+                <!-- ════════════════════════════════════════════════════ -->
+                <div class="acf-tab-panel" data-panel="generation">
+
+                    <!-- ── Default Provider ────────────────────────── -->
+                    <div class="acf-card">
+                        <h2><?php esc_html_e( 'Default Provider', 'ai-content-forge' ); ?></h2>
+                        <p class="description"><?php esc_html_e( 'Used when no per-use override is selected in the Gutenberg sidebar.', 'ai-content-forge' ); ?></p>
+                        <div class="acf-provider-cards">
+                            <?php foreach ( ACF_Settings::PROVIDERS as $slug ) :
+                                $checked = checked( $settings['default_provider'], $slug, false );
+                                $labels  = [ 'claude' => 'Anthropic Claude', 'openai' => 'OpenAI', 'ollama' => 'Ollama' ];
+                                $icons   = [ 'claude' => '🟠', 'openai' => '🟢', 'ollama' => '🔵' ];
+                            ?>
+                            <label class="acf-provider-card <?php echo $settings['default_provider'] === $slug ? 'selected' : ''; ?>">
+                                <input type="radio" name="<?php echo esc_attr( $opt ); ?>[default_provider]"
+                                       value="<?php echo esc_attr( $slug ); ?>" <?php echo $checked; ?>>
+                                <span class="acf-provider-icon"><?php echo $icons[ $slug ]; ?></span>
+                                <span class="acf-provider-name"><?php echo esc_html( $labels[ $slug ] ); ?></span>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- ── Generation defaults ─────────────────────── -->
+                    <div class="acf-card">
+                        <h2><?php esc_html_e( 'Generation Defaults', 'ai-content-forge' ); ?></h2>
+                        <p class="description"><?php esc_html_e( 'These values apply to all Gutenberg sidebar generation runs unless overridden in the Advanced panel.', 'ai-content-forge' ); ?></p>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th><?php esc_html_e( 'Max Output Tokens', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="number" min="100" max="200000" step="50"
+                                           id="acf-max-output-tokens"
+                                           name="<?php echo esc_attr( $opt ); ?>[max_output_tokens]"
+                                           value="<?php echo esc_attr( $settings['max_output_tokens'] ?? ( $settings['max_tokens'] ?? 1500 ) ); ?>">
+                                    <p class="description" id="acf-token-limit-hint"><?php esc_html_e( 'Check your provider\'s documentation for the exact token limit and whether thinking tokens share the same cap.', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Max Thinking Tokens', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="number" min="0" max="200000" step="50"
+                                           id="acf-max-thinking-tokens"
+                                           name="<?php echo esc_attr( $opt ); ?>[max_thinking_tokens]"
+                                           value="<?php echo esc_attr( $settings['max_thinking_tokens'] ?? 0 ); ?>">
+                                    <p class="description">
+                                        <?php esc_html_e( 'Used only for reasoning-capable models. Anthropic maps this to thinking.budget_tokens, OpenAI folds it into the total response token cap and reasoning effort, and Ollama uses it to enable thinking plus expand the shared generation budget.', 'ai-content-forge' ); ?>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?php esc_html_e( 'Temperature', 'ai-content-forge' ); ?></th>
+                                <td>
+                                    <input type="number" min="0" max="2" step="0.1"
+                                           name="<?php echo esc_attr( $opt ); ?>[temperature]"
+                                           value="<?php echo esc_attr( $settings['temperature'] ); ?>">
+                                    <p class="description"><?php esc_html_e( '0 = deterministic, 1 = creative, 2 = chaotic', 'ai-content-forge' ); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                </div><!-- /tab: generation -->
+
+                <!-- ════════════════════════════════════════════════════ -->
+                <!-- Tab: Prompts                                          -->
+                <!-- ════════════════════════════════════════════════════ -->
+                <div class="acf-tab-panel" data-panel="prompts">
+
+                    <div class="acf-card">
+                        <h2><?php esc_html_e( 'Prompt Templates', 'ai-content-forge' ); ?></h2>
+                        <p class="description">
+                            <?php esc_html_e( 'Edit the default prompt used for each content type. Leave a prompt blank to restore its built-in default on save.', 'ai-content-forge' ); ?>
+                        </p>
+                        <div class="acf-placeholder-list" aria-label="<?php esc_attr_e( 'Available prompt placeholders', 'ai-content-forge' ); ?>">
+                            <?php foreach ( $placeholders as $placeholder ) : ?>
+                                <code><?php echo esc_html( $placeholder ); ?></code>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="acf-prompt-stack">
+                            <?php foreach ( $prompts as $type => $config ) : ?>
+                                <?php $field_key = ACF_Settings::prompt_setting_key( $type ); ?>
+                                <div class="acf-prompt-field">
+                                    <label for="acf-prompt-<?php echo esc_attr( $type ); ?>">
+                                        <?php echo esc_html( $config['label'] ); ?>
+                                    </label>
+                                    <textarea
+                                        id="acf-prompt-<?php echo esc_attr( $type ); ?>"
+                                        class="large-text code"
+                                        rows="<?php echo esc_attr( (string) $config['rows'] ); ?>"
+                                        name="<?php echo esc_attr( $opt ); ?>[<?php echo esc_attr( $field_key ); ?>]"
+                                    ><?php echo esc_textarea( $settings[ $field_key ] ?? '' ); ?></textarea>
+                                    <p class="description"><?php echo esc_html( $config['description'] ); ?></p>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                </div><!-- /tab: prompts -->
+
+                <!-- ════════════════════════════════════════════════════ -->
+                <!-- Tab: Ollama Setup                                     -->
+                <!-- ════════════════════════════════════════════════════ -->
+                <div class="acf-tab-panel" data-panel="ollama-setup">
+
+                    <div class="acf-card acf-setup-guide" id="acf-ollama-wizard">
+                        <h2><?php esc_html_e( 'Ollama Setup Guide', 'ai-content-forge' ); ?></h2>
+                        <p class="description"><?php esc_html_e( 'This guide is written for people starting from zero. Follow it from top to bottom. If a step already matches your setup, skip only that step and continue with the next one.', 'ai-content-forge' ); ?></p>
+
+                        <div class="acf-guide-nav" aria-label="<?php esc_attr_e( 'Ollama guide sections', 'ai-content-forge' ); ?>">
+                            <a href="#acf-ollama-guide-choose"><?php esc_html_e( '1. Choose the right path', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-cloudflare"><?php esc_html_e( '2. Create Cloudflare + domain', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-ollama"><?php esc_html_e( '3. Install Ollama', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-cloudflared"><?php esc_html_e( '4. Install cloudflared', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-tunnel"><?php esc_html_e( '5. Create the tunnel', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-access"><?php esc_html_e( '6. Lock it down with Access', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-wordpress"><?php esc_html_e( '7. Paste values into WordPress', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-wsl"><?php esc_html_e( '8. WSL notes', 'ai-content-forge' ); ?></a>
+                        </div>
 
                     <div class="acf-guide-note">
                         <p><strong><?php esc_html_e( 'Recommended path for cloud-hosted WordPress:', 'ai-content-forge' ); ?></strong> <?php esc_html_e( 'Cloudflare Tunnel + Cloudflare Access + a single-header service token. That gives you one public hostname to paste here, plus one header name and one header value.', 'ai-content-forge' ); ?></p>
@@ -446,79 +585,24 @@ Access Header Value: {"cf-access-client-id":"YOUR_CLIENT_ID","cf-access-client-s
                             <li><?php esc_html_e( 'only after both curl tests succeed, return to WordPress and wait for Connected', 'ai-content-forge' ); ?></li>
                         </ol>
                     </div>
+                </div><!-- /acf-card acf-setup-guide -->
+
+                </div><!-- /tab: ollama-setup -->
+
+                <!-- ── Sticky save footer ──────────────────────────────── -->
+                <div class="acf-save-footer" id="acf-save-footer">
+                    <span class="acf-save-dirty-notice" id="acf-dirty-notice" aria-live="polite">
+                        <?php esc_html_e( 'You have unsaved changes', 'ai-content-forge' ); ?>
+                    </span>
+                    <button type="button" class="button" id="acf-discard-btn">
+                        <?php esc_html_e( 'Discard Changes', 'ai-content-forge' ); ?>
+                    </button>
+                    <input type="submit" name="submit" id="submit" class="button button-primary"
+                           value="<?php esc_attr_e( 'Save Settings', 'ai-content-forge' ); ?>">
                 </div>
 
-                <!-- ── Generation defaults ────────────────────────────── -->
-                <div class="acf-card">
-                    <h2><?php esc_html_e( 'Generation Defaults', 'ai-content-forge' ); ?></h2>
-                    <table class="form-table" role="presentation">
-                        <tr>
-                            <th><?php esc_html_e( 'Max Output Tokens', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="number" min="100" max="200000" step="50"
-                                       id="acf-max-output-tokens"
-                                       name="<?php echo esc_attr( $opt ); ?>[max_output_tokens]"
-                                       value="<?php echo esc_attr( $settings['max_output_tokens'] ?? ( $settings['max_tokens'] ?? 1500 ) ); ?>">
-                                <p class="description" id="acf-token-limit-hint"></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?php esc_html_e( 'Max Thinking Tokens', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="number" min="0" max="200000" step="50"
-                                       id="acf-max-thinking-tokens"
-                                       name="<?php echo esc_attr( $opt ); ?>[max_thinking_tokens]"
-                                       value="<?php echo esc_attr( $settings['max_thinking_tokens'] ?? 0 ); ?>">
-                                <p class="description">
-                                    <?php esc_html_e( 'Used only for reasoning-capable models. Anthropic maps this to thinking.budget_tokens, OpenAI folds it into the total response token cap and reasoning effort, and Ollama uses it to enable thinking plus expand the shared generation budget.', 'ai-content-forge' ); ?>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?php esc_html_e( 'Temperature', 'ai-content-forge' ); ?></th>
-                            <td>
-                                <input type="number" min="0" max="2" step="0.1"
-                                       name="<?php echo esc_attr( $opt ); ?>[temperature]"
-                                       value="<?php echo esc_attr( $settings['temperature'] ); ?>">
-                                <p class="description"><?php esc_html_e( '0 = deterministic, 1 = creative, 2 = chaotic', 'ai-content-forge' ); ?></p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div class="acf-card">
-                    <h2><?php esc_html_e( 'Prompt Templates', 'ai-content-forge' ); ?></h2>
-                    <p class="description">
-                        <?php esc_html_e( 'Edit the default prompt used for each content type. Leave a prompt blank to restore its built-in default on save.', 'ai-content-forge' ); ?>
-                    </p>
-                    <div class="acf-placeholder-list" aria-label="<?php esc_attr_e( 'Available prompt placeholders', 'ai-content-forge' ); ?>">
-                        <?php foreach ( $placeholders as $placeholder ) : ?>
-                            <code><?php echo esc_html( $placeholder ); ?></code>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div class="acf-prompt-stack">
-                        <?php foreach ( $prompts as $type => $config ) : ?>
-                            <?php $field_key = ACF_Settings::prompt_setting_key( $type ); ?>
-                            <div class="acf-prompt-field">
-                                <label for="acf-prompt-<?php echo esc_attr( $type ); ?>">
-                                    <?php echo esc_html( $config['label'] ); ?>
-                                </label>
-                                <textarea
-                                    id="acf-prompt-<?php echo esc_attr( $type ); ?>"
-                                    class="large-text code"
-                                    rows="<?php echo esc_attr( (string) $config['rows'] ); ?>"
-                                    name="<?php echo esc_attr( $opt ); ?>[<?php echo esc_attr( $field_key ); ?>]"
-                                ><?php echo esc_textarea( $settings[ $field_key ] ?? '' ); ?></textarea>
-                                <p class="description"><?php echo esc_html( $config['description'] ); ?></p>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
-                <?php submit_button( __( 'Save Settings', 'ai-content-forge' ) ); ?>
             </form>
-        </div>
+        </div><!-- /wrap -->
         <?php
     }
 }

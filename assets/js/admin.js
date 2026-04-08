@@ -6,6 +6,122 @@ jQuery( function ( $ ) {
     const debounceTimers = {};
     const requestVersions = {};
 
+    // ══════════════════════════════════════════════════════════════════════════
+    // Tab navigation
+    // ══════════════════════════════════════════════════════════════════════════
+    const LS_TAB_KEY = 'acf-active-tab';
+    const DEFAULT_TAB = 'providers';
+
+    function getInitialTab() {
+        // URL param wins (supports bookmarks)
+        const params = new URLSearchParams( window.location.search );
+        const urlTab = params.get( 'tab' );
+        if ( urlTab && $( '[data-panel="' + urlTab + '"]' ).length ) {
+            return urlTab;
+        }
+        // Fall back to localStorage (survives settings-save redirect)
+        const stored = window.localStorage && window.localStorage.getItem( LS_TAB_KEY );
+        if ( stored && $( '[data-panel="' + stored + '"]' ).length ) {
+            return stored;
+        }
+        return DEFAULT_TAB;
+    }
+
+    function activateTab( tabId ) {
+        // Update nav tabs
+        $( '.acf-tab-nav .nav-tab' ).removeClass( 'nav-tab-active' );
+        $( '.acf-tab-nav .nav-tab[data-tab="' + tabId + '"]' ).addClass( 'nav-tab-active' );
+
+        // Show/hide panels
+        $( '.acf-tab-panel' ).hide().attr( 'aria-hidden', 'true' );
+        $( '.acf-tab-panel[data-panel="' + tabId + '"]' ).show().attr( 'aria-hidden', 'false' );
+
+        // Persist
+        if ( window.localStorage ) {
+            window.localStorage.setItem( LS_TAB_KEY, tabId );
+        }
+
+        // Reflect in URL without page reload
+        if ( window.history && window.history.replaceState ) {
+            const url = new URL( window.location.href );
+            url.searchParams.set( 'tab', tabId );
+            window.history.replaceState( null, '', url.toString() );
+        }
+    }
+
+    // Wire tab clicks
+    $( '.acf-tab-nav .nav-tab' ).on( 'click', function ( e ) {
+        e.preventDefault();
+        activateTab( $( this ).data( 'tab' ) );
+    } );
+
+    // Wire cross-tab links (e.g. "Open Setup Guide →" in Ollama card)
+    $( document ).on( 'click', '.acf-tab-link', function ( e ) {
+        e.preventDefault();
+        const target = $( this ).data( 'target-tab' );
+        if ( target ) {
+            activateTab( target );
+            window.scrollTo( { top: 0, behavior: 'smooth' } );
+        }
+    } );
+
+    // Activate initial tab on load
+    activateTab( getInitialTab() );
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Dirty-state tracking + sticky footer
+    // ══════════════════════════════════════════════════════════════════════════
+    let isDirty = false;
+
+    function markDirty() {
+        if ( isDirty ) { return; }
+        isDirty = true;
+        $( '#acf-save-footer' ).addClass( 'is-dirty' );
+        $( '#acf-dirty-notice' ).show();
+    }
+
+    function markClean() {
+        isDirty = false;
+        $( '#acf-save-footer' ).removeClass( 'is-dirty' );
+        $( '#acf-dirty-notice' ).hide();
+    }
+
+    // Track any form change
+    $( '#acf-settings-form' ).on( 'change input', 'input, select, textarea', function () {
+        markDirty();
+    } );
+
+    // Discard: HTML form.reset() restores all fields to their PHP-rendered defaults
+    $( '#acf-discard-btn' ).on( 'click', function () {
+        document.getElementById( 'acf-settings-form' ).reset();
+        markClean();
+        // Re-trigger provider sync so model dropdowns refresh to saved state
+        syncableProviders.forEach( function ( slug ) {
+            scheduleProviderSync( slug );
+        } );
+    } );
+
+    // On form submit, clear dirty flag so footer hides on next load
+    $( '#acf-settings-form' ).on( 'submit', function () {
+        markClean();
+        if ( window.localStorage ) {
+            // Preserve active tab across the settings-save redirect
+            const params = new URLSearchParams( window.location.search );
+            const active = params.get( 'tab' ) || DEFAULT_TAB;
+            window.localStorage.setItem( LS_TAB_KEY, active );
+        }
+    } );
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Summary strip badge mirroring
+    // ══════════════════════════════════════════════════════════════════════════
+    function updateSummaryBadge( slug, status ) {
+        const $badge = $( '[data-summary-provider="' + slug + '"]' );
+        if ( ! $badge.length ) { return; }
+        $badge.removeClass( 'is-checking is-connected is-error' );
+        if ( status ) { $badge.addClass( 'is-' + status ); }
+    }
+
     // ── Per-model output token limits (prefix-matched, longest first) ─────────
     const MODEL_TOKEN_LIMITS = [
         // OpenAI — Responses API models
@@ -76,28 +192,22 @@ jQuery( function ( $ ) {
     function setProviderStatus( slug, status, message ) {
         const $status = $( '#status-' + slug );
 
-        if ( ! $status.length ) {
-            return;
+        if ( $status.length ) {
+            $status.removeClass( 'is-checking is-connected is-error' );
+
+            if ( ! status ) {
+                $status.text( '' );
+            } else if ( 'checking' === status ) {
+                $status.addClass( 'is-checking' ).text( i18n.checking );
+            } else if ( 'connected' === status ) {
+                $status.addClass( 'is-connected' ).text( i18n.connected );
+            } else {
+                $status.addClass( 'is-error' ).text( message ? i18n.failed + ': ' + message : i18n.failed );
+            }
         }
 
-        $status.removeClass( 'is-checking is-connected is-error' );
-
-        if ( ! status ) {
-            $status.text( '' );
-            return;
-        }
-
-        if ( 'checking' === status ) {
-            $status.addClass( 'is-checking' ).text( i18n.checking );
-            return;
-        }
-
-        if ( 'connected' === status ) {
-            $status.addClass( 'is-connected' ).text( i18n.connected );
-            return;
-        }
-
-        $status.addClass( 'is-error' ).text( message ? i18n.failed + ': ' + message : i18n.failed );
+        // Mirror status to summary strip badge
+        updateSummaryBadge( slug, status || '' );
     }
 
     function getProviderSelect( slug ) {
