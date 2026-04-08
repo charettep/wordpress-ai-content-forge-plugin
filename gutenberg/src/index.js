@@ -4,6 +4,7 @@
  * Build: cd gutenberg && npm install && npm run build
  */
 
+import './sidebar.css';
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/edit-post';
 import {
@@ -1188,6 +1189,7 @@ registerPlugin( 'ai-genie', {
 				name="ai-genie-sidebar"
 				title={ __( 'AI Genie', 'ai-genie' ) }
 				icon={ <CreateIcon /> }
+				className="aig-gutenberg-sidebar"
 			>
 				<AcfSidebar />
 			</PluginSidebar>

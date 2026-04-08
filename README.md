@@ -15,7 +15,7 @@ AI Genie is a WordPress plugin for generating editorial content with Anthropic C
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v3.0.2`.
+The current packaged release is `v3.0.3`.
 
 ## Features
 
@@ -36,6 +36,7 @@ The current packaged release is `v3.0.2`.
 - Post Content structure + target length controls to shape output format and size
 - Exact Post Content target length input with a linked `1-10000` word slider
 - Advanced per-run overrides for model, prompt template, max output tokens, max thinking tokens, and temperature
+- Wider Gutenberg plugin sidebar layout for the AI Genie panel so generation controls have more usable horizontal space
 
 ## Requirements
 
@@ -74,7 +75,7 @@ The current packaged release is `v3.0.2`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-genie-v3.0.2.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-genie-v3.0.3.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
