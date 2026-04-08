@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.11.0`.
+The current packaged release is `v2.11.1`.
 
 ## Features
 
@@ -29,6 +29,19 @@ The current packaged release is `v2.11.0`.
 - Advanced per-run overrides for model, prompt template, max output tokens, max thinking tokens, and temperature
 
 ## Changelog
+
+### v2.11.1 — Stricter WordPress Formatting Templates
+
+**Prompt templates**
+
+- tightened the built-in default prompt templates so generated content follows stricter WordPress-safe formatting rules
+- expanded the `post_content` default template with explicit guidance for headings, paragraphs, lists, links, tables, inline formatting, code, embeds, images, buttons, columns, accordions, footnotes, and page breaks
+- tightened the `seo_title`, `meta_description`, and `excerpt` defaults so they return plain text only with no stray HTML, markdown, labels, or quotes
+
+**Existing installs**
+
+- added a safe prompt-template migration so sites still using the old built-in defaults automatically receive the new stricter defaults
+- customized prompt templates are preserved as-is
 
 ### v2.11.0 — Sidebar Word Target + Prompt Override + Packaging Fix
 
@@ -165,7 +178,7 @@ The current packaged release is `v2.11.0`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.11.0.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.11.1.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -547,10 +560,18 @@ The generator builds prompts from:
 
 Behavior by type:
 
-- `post_content`: aims for a structured article with headings and HTML output
-- `seo_title`: aims for a 50 to 60 character title
-- `meta_description`: aims for a 150 to 160 character description
-- `excerpt`: aims for a 40 to 55 word excerpt
+- `post_content`: aims for a structured, publication-ready WordPress HTML fragment with stricter rules around heading hierarchy, paragraphs, lists, links, tables, inline formatting, and optional advanced blocks
+- `seo_title`: aims for a 50 to 60 character plain-text title
+- `meta_description`: aims for a 150 to 160 character plain-text description
+- `excerpt`: aims for a 40 to 55 word plain-text excerpt
+
+The built-in `post_content` template now explicitly instructs the model to:
+
+- avoid `<h1>` because WordPress outputs the main title separately
+- prefer valid WordPress-safe HTML such as `<h2>`, `<h3>`, `<p>`, `<ul>`, `<ol>`, `<li>`, `<strong>`, `<em>`, `<code>`, and valid `<table>` markup when useful
+- use descriptive anchor text for links
+- include advanced structures such as embeds, images, videos, buttons, columns, accordions, footnotes, and page breaks only when the topic or prompt clearly justifies them
+- avoid unsupported scripts, markdown fences, stray explanations, and invalid pseudo-HTML
 
 ## REST API
 

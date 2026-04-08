@@ -440,7 +440,7 @@ class ACF_Admin {
                     <div class="acf-card">
                         <h2><?php esc_html_e( 'Prompt Templates', 'ai-content-forge' ); ?></h2>
                         <p class="description">
-                            <?php esc_html_e( 'Edit the default prompt used for each content type. Leave a prompt blank to restore its built-in default on save.', 'ai-content-forge' ); ?>
+                            <?php esc_html_e( 'Edit the default prompt used for each content type. Leave a prompt blank to restore its built-in default on save. The built-in defaults now enforce stricter WordPress-safe formatting rules for headings, paragraphs, lists, tables, links, embeds, media, and other structured output.', 'ai-content-forge' ); ?>
                         </p>
 
                         <div class="acf-prompt-layout">

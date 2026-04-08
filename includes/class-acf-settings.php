@@ -40,6 +40,87 @@ class ACF_Settings {
     public static function prompt_defaults(): array {
         return [
             'post_content' => <<<PROMPT
+You are an expert WordPress content writer. Write a complete, publication-ready WordPress {post_type} in {language}.
+
+Title: {title}
+Tone: {tone}
+{keywords_line}
+{structure_line}
+{target_length_line}
+{existing_content_block}
+
+Requirements:
+- Return only WordPress-compatible output. Do not add commentary, notes, markdown fences, YAML, or explanations.
+- Default to clean HTML that the WordPress block editor can safely ingest as post content.
+- Do NOT include the post title as an <h1>. WordPress outputs the main title separately.
+- Use a strict heading hierarchy with <h2> for main sections, <h3> for subsections, and <h4> only when truly necessary.
+- Wrap normal body copy in <p> tags. Keep paragraphs readable and moderately short.
+- Use only WordPress-safe inline formatting: <strong>, <em>, <code>, <sup>, <sub>, <mark>, <small>.
+- Use lists only with valid <ul>, <ol>, and <li> markup. Do not fake lists with hyphens.
+- Use tables only when the content clearly benefits from tabular comparison. If needed, output valid <table>, <thead>, <tbody>, <tr>, <th>, and <td> markup.
+- Use hyperlinks only when useful. Every link must use descriptive anchor text and a valid <a href="..."> tag.
+- For inline code examples, use <code>. For multi-line code examples, use <pre><code>...</code></pre> and keep them short.
+- For images, videos, embeds, iframes, buttons, columns, accordions, page breaks, footnotes, or advanced Gutenberg patterns: include them only if the topic genuinely requires them or the prompt clearly calls for them.
+- If you include an image, use WordPress-safe markup such as <figure class="wp-block-image"><img ... /><figcaption>...</figcaption></figure>.
+- If you include a video or external embed, use WordPress-safe embed markup or a core embed block wrapper. Never output raw unsupported script tags.
+- If you include buttons, use WordPress core buttons markup with <div class="wp-block-buttons"> and <div class="wp-block-button"><a class="wp-block-button__link" ...>Label</a></div>.
+- If you include columns, use WordPress core columns markup with wp-block-columns and wp-block-column containers.
+- If you include an accordion, use semantic <details><summary>...</summary>...</details> markup.
+- If you include a page break, use the WordPress next page marker <!-- wp:nextpage -->.
+- If you include footnotes, use linked footnote references and a short endnotes section.
+- If alignment is needed, use simple WordPress-compatible classes or semantic markup. Do not invent unsupported CSS or scripts.
+- Include an engaging introduction and a clear conclusion.
+- Keep the structure coherent, factual, and ready to publish in WordPress without manual cleanup.
+PROMPT,
+            'seo_title' => <<<PROMPT
+You are an SEO specialist. Write an optimised SEO title tag for a WordPress {post_type}.
+
+Post title: {title}
+Tone: {tone}
+{keywords_line}
+
+Requirements:
+- 50–60 characters maximum
+- Include the primary keyword naturally
+- Be compelling and click-worthy
+- Output plain text only
+- Do not output HTML, markdown, emojis, quotation marks, separators, labels, or explanations
+PROMPT,
+            'meta_description' => <<<PROMPT
+You are an SEO specialist. Write a meta description for a WordPress {post_type}.
+
+Post title: {title}
+Tone: {tone}
+{keywords_line}
+{existing_content_block}
+
+Requirements:
+- 150–160 characters maximum
+- Include the primary keyword naturally
+- Include a subtle call to action
+- Output plain text only
+- Do not output HTML, markdown, emojis, quotation marks, labels, or explanations
+PROMPT,
+            'excerpt' => <<<PROMPT
+You are a content editor. Write a short excerpt for a WordPress {post_type}.
+
+Post title: {title}
+Tone: {tone}
+{existing_content_block}
+
+Requirements:
+- 40–55 words
+- Engaging, teases the content without giving everything away
+- Plain text only
+- Do not output HTML, markdown, bullets, headings, quotation marks, labels, or explanations
+PROMPT,
+        ];
+    }
+
+    private static function legacy_prompt_defaults(): array {
+        return [
+            'post_content' => [
+                <<<PROMPT
 You are an expert content writer. Write a complete, well-structured WordPress {post_type} in {language}.
 
 Title: {title}
@@ -56,7 +137,9 @@ Requirements:
 - Do NOT include the post title as an H1 — WordPress outputs that separately
 - Do NOT wrap the output in code fences
 PROMPT,
-            'seo_title' => <<<PROMPT
+            ],
+            'seo_title' => [
+                <<<PROMPT
 You are an SEO specialist. Write an optimised SEO title tag for a WordPress {post_type}.
 
 Post title: {title}
@@ -69,7 +152,9 @@ Requirements:
 - Be compelling and click-worthy
 - Output only the title text, no quotes, no explanation
 PROMPT,
-            'meta_description' => <<<PROMPT
+            ],
+            'meta_description' => [
+                <<<PROMPT
 You are an SEO specialist. Write a meta description for a WordPress {post_type}.
 
 Post title: {title}
@@ -83,7 +168,9 @@ Requirements:
 - Include a subtle call to action
 - Output only the description text, no quotes, no explanation
 PROMPT,
-            'excerpt' => <<<PROMPT
+            ],
+            'excerpt' => [
+                <<<PROMPT
 You are a content editor. Write a short excerpt for a WordPress {post_type}.
 
 Post title: {title}
@@ -95,6 +182,7 @@ Requirements:
 - Engaging, teases the content without giving everything away
 - Plain text only — no HTML, no quotes around the output, no explanation
 PROMPT,
+            ],
         ];
     }
 
@@ -178,6 +266,16 @@ PROMPT,
     }
 
     private static function normalize_settings( array $settings ): array {
+        foreach ( self::prompt_defaults() as $type => $default_template ) {
+            $key     = self::prompt_setting_key( $type );
+            $current = self::normalize_prompt_template( (string) ( $settings[ $key ] ?? '' ) );
+            $legacy  = array_map( [ self::class, 'normalize_prompt_template' ], self::legacy_prompt_defaults()[ $type ] ?? [] );
+
+            if ( '' === $current || in_array( $current, $legacy, true ) ) {
+                $settings[ $key ] = $default_template;
+            }
+        }
+
         if ( empty( $settings['max_output_tokens'] ) && ! empty( $settings['max_tokens'] ) ) {
             $settings['max_output_tokens'] = absint( $settings['max_tokens'] );
         }
