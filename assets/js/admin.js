@@ -1,7 +1,7 @@
 /* AI Content Forge — Admin JS */
-/* global acfAdmin, jQuery */
+/* global aigAdmin, jQuery */
 jQuery( function ( $ ) {
-    const { restUrl, nonce, i18n } = acfAdmin;
+    const { restUrl, nonce, i18n } = aigAdmin;
     const syncableProviders = [ 'claude', 'openai', 'ollama' ];
     const debounceTimers = {};
     const requestVersions = {};
