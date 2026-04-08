@@ -494,21 +494,95 @@
     padding: 4px 8px;
 }
 
-.acf-prompt-stack {
+/* ── Prompt split layout ────────────────────────────────────────────────── */
+.acf-prompt-layout {
     display: grid;
-    gap: 18px;
+    grid-template-columns: 190px 1fr;
+    gap: 0;
+    border: 1px solid var(--acf-border);
+    border-radius: var(--acf-radius);
+    overflow: hidden;
+    margin-top: 16px;
 }
 
-.acf-prompt-field label {
+.acf-prompt-rail {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--acf-border);
+    background: #f7f9fc;
+}
+
+.acf-prompt-rail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+    color: #555;
+    border-left: 3px solid transparent;
+    transition: background .15s, border-color .15s, color .15s;
+}
+
+.acf-prompt-rail-item:hover { background: #eef3fb; color: var(--acf-primary); }
+
+.acf-prompt-rail-item.is-active {
+    background: var(--acf-bg-active);
+    border-left-color: var(--acf-accent);
+    color: var(--acf-primary);
+    font-weight: 600;
+}
+
+.acf-prompt-rail-icon { font-size: 1rem; flex-shrink: 0; }
+.acf-prompt-rail-label { line-height: 1.3; }
+
+.acf-prompt-editor { padding: 20px; min-width: 0; }
+
+.acf-prompt-pane { display: none; }
+.acf-prompt-pane.is-active { display: block; }
+
+.acf-prompt-pane-label {
     display: block;
     font-weight: 600;
     margin-bottom: 8px;
     color: #444;
+    font-size: 13px;
 }
 
-.acf-prompt-field textarea {
+.acf-prompt-textarea {
     width: 100%;
-    min-height: 160px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+@media (max-width: 782px) {
+    .acf-prompt-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .acf-prompt-rail {
+        flex-direction: row;
+        flex-wrap: wrap;
+        border-right: none;
+        border-bottom: 1px solid var(--acf-border);
+    }
+
+    .acf-prompt-rail-item {
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .acf-prompt-rail-item.is-active {
+        border-left-color: transparent;
+        border-bottom-color: var(--acf-accent);
+    }
 }
 
 /* Form table tweaks */

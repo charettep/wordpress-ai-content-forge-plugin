@@ -421,29 +421,59 @@ class ACF_Admin {
                         <p class="description">
                             <?php esc_html_e( 'Edit the default prompt used for each content type. Leave a prompt blank to restore its built-in default on save.', 'ai-content-forge' ); ?>
                         </p>
-                        <div class="acf-placeholder-list" aria-label="<?php esc_attr_e( 'Available prompt placeholders', 'ai-content-forge' ); ?>">
-                            <?php foreach ( $placeholders as $placeholder ) : ?>
-                                <code><?php echo esc_html( $placeholder ); ?></code>
-                            <?php endforeach; ?>
-                        </div>
 
-                        <div class="acf-prompt-stack">
-                            <?php foreach ( $prompts as $type => $config ) : ?>
-                                <?php $field_key = ACF_Settings::prompt_setting_key( $type ); ?>
-                                <div class="acf-prompt-field">
-                                    <label for="acf-prompt-<?php echo esc_attr( $type ); ?>">
+                        <div class="acf-prompt-layout">
+
+                            <!-- Left rail -->
+                            <nav class="acf-prompt-rail" aria-label="<?php esc_attr_e( 'Prompt types', 'ai-content-forge' ); ?>">
+                                <?php
+                                $prompt_icons = [
+                                    'post_content'     => '✍️',
+                                    'seo_title'        => '🏷️',
+                                    'meta_description' => '📝',
+                                    'excerpt'          => '✂️',
+                                ];
+                                $first_prompt = true;
+                                foreach ( $prompts as $type => $config ) : ?>
+                                    <button type="button"
+                                            class="acf-prompt-rail-item <?php echo $first_prompt ? 'is-active' : ''; ?>"
+                                            data-prompt-type="<?php echo esc_attr( $type ); ?>">
+                                        <span class="acf-prompt-rail-icon"><?php echo $prompt_icons[ $type ] ?? '📄'; ?></span>
+                                        <span class="acf-prompt-rail-label"><?php echo esc_html( $config['label'] ); ?></span>
+                                    </button>
+                                    <?php $first_prompt = false; ?>
+                                <?php endforeach; ?>
+                            </nav>
+
+                            <!-- Right editor pane -->
+                            <div class="acf-prompt-editor">
+                                <?php
+                                $first_prompt = true;
+                                foreach ( $prompts as $type => $config ) :
+                                    $field_key = ACF_Settings::prompt_setting_key( $type );
+                                ?>
+                                <div class="acf-prompt-pane <?php echo $first_prompt ? 'is-active' : ''; ?>"
+                                     data-prompt-pane="<?php echo esc_attr( $type ); ?>">
+                                    <label class="acf-prompt-pane-label" for="acf-prompt-<?php echo esc_attr( $type ); ?>">
                                         <?php echo esc_html( $config['label'] ); ?>
                                     </label>
                                     <textarea
                                         id="acf-prompt-<?php echo esc_attr( $type ); ?>"
-                                        class="large-text code"
-                                        rows="<?php echo esc_attr( (string) $config['rows'] ); ?>"
+                                        class="large-text code acf-prompt-textarea"
+                                        rows="18"
                                         name="<?php echo esc_attr( $opt ); ?>[<?php echo esc_attr( $field_key ); ?>]"
                                     ><?php echo esc_textarea( $settings[ $field_key ] ?? '' ); ?></textarea>
                                     <p class="description"><?php echo esc_html( $config['description'] ); ?></p>
+                                    <div class="acf-placeholder-list" aria-label="<?php esc_attr_e( 'Available prompt placeholders', 'ai-content-forge' ); ?>">
+                                        <?php foreach ( $placeholders as $placeholder ) : ?>
+                                            <code><?php echo esc_html( $placeholder ); ?></code>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
+                                <?php $first_prompt = false; endforeach; ?>
+                            </div><!-- /.acf-prompt-editor -->
+
+                        </div><!-- /.acf-prompt-layout -->
                     </div>
 
                 </div><!-- /tab: prompts -->

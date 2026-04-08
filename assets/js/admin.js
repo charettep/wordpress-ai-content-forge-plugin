@@ -348,6 +348,18 @@ jQuery( function ( $ ) {
         } );
     }
 
+    // ── Prompt rail switching ────────────────────────────────────────────────
+    function activatePromptType( type ) {
+        $( '.acf-prompt-rail-item' ).removeClass( 'is-active' );
+        $( '.acf-prompt-rail-item[data-prompt-type="' + type + '"]' ).addClass( 'is-active' );
+        $( '.acf-prompt-pane' ).removeClass( 'is-active' );
+        $( '.acf-prompt-pane[data-prompt-pane="' + type + '"]' ).addClass( 'is-active' );
+    }
+
+    $( document ).on( 'click', '.acf-prompt-rail-item', function () {
+        activatePromptType( $( this ).data( 'prompt-type' ) );
+    } );
+
     // ── API key show / hide toggle ───────────────────────────────────────────
     $( document ).on( 'click', '.acf-key-toggle', function () {
         const $input = $( this ).siblings( 'input' );
