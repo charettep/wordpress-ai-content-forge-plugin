@@ -78,7 +78,7 @@ SVG;
             AIG_VERSION,
             true
         );
-        wp_localize_script( 'aig-admin', 'acfAdmin', [
+        wp_localize_script( 'aig-admin', 'aigAdmin', [
             'restUrl' => rest_url( AIG_Rest_API::REST_NAMESPACE ),
             'nonce'   => wp_create_nonce( 'wp_rest' ),
             'settings' => AIG_Settings::for_js(),
