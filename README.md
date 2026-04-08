@@ -48,6 +48,18 @@ The current packaged release is `v2.12.0`.
 
 ## Changelog
 
+### v3.0.1 — Ollama Error Message Fix
+
+- fixes HTTP 400 errors from Ollama showing as a generic "HTTP 400" instead of the real error message
+- the Ollama streaming provider now correctly extracts the error body from the response when Ollama returns a 4xx status
+- handles Ollama error responses that arrive as a single JSON object without a trailing newline
+
+### v3.0.0 — AI Genie Rebrand
+
+- renames the plugin from "AI Content Forge" to "AI Genie"
+- all PHP identifiers, REST namespace, JS globals, and option keys updated to use the `aig` / `ai-genie` prefix
+- new plugin icon and branding across wp-admin and the Gutenberg sidebar
+
 ### v2.12.0 — Top-Bar Generation Defaults
 
 - removes the separate `Generation` tab from the wp-admin settings page

@@ -319,7 +319,20 @@ class AIG_Provider_Ollama extends AIG_Provider {
             }
 
             if ( $http_code >= 400 ) {
-                $last_error = new RuntimeException( "HTTP $http_code" );
+                // Try to extract the actual error message from the response body.
+                // Ollama error responses are a single JSON object that may not end
+                // with \n, so check both $last_data (processed lines) and the
+                // remaining $buffer (unparsed remainder after the last \n).
+                $error_data = $last_data;
+                if ( '' !== $buffer ) {
+                    $decoded = json_decode( $buffer, true );
+                    if ( is_array( $decoded ) ) {
+                        $error_data = $decoded;
+                    }
+                }
+                $msg = $error_data['error']['message'] ?? $error_data['error'] ?? null;
+                $error_msg = ( null !== $msg && '' !== (string) $msg ) ? (string) $msg : "HTTP $http_code";
+                $last_error = new RuntimeException( $error_msg );
                 continue;
             }
 
