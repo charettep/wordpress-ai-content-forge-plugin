@@ -10,16 +10,14 @@ class AIG_Admin {
     private static function menu_icon_data_uri(): string {
         $svg = <<<'SVG'
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-  <!-- Document body -->
-  <path d="M4 2.5h8.4l3.6 3.6V17a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V3.4A.9.9 0 0 1 4 2.5Z" fill="currentColor" opacity="0.85"/>
-  <!-- Dog-ear fold highlight -->
-  <path d="M12.4 2.5v3c0 .33.27.6.6.6h3" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="0.7"/>
-  <!-- Content lines (negative space) -->
-  <rect x="5.5" y="9" width="5.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
-  <rect x="5.5" y="11.3" width="7" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
-  <rect x="5.5" y="13.6" width="4.5" height="1.3" rx="0.65" fill="rgba(0,0,0,0.3)"/>
-  <!-- Lightning bolt / AI spark — overlapping the corner -->
-  <path d="M15.4 1.2 L12.2 7.4 L14.2 7.4 L10.8 13.8 L17.8 6.6 L15.4 6.6 Z" fill="currentColor"/>
+  <ellipse cx="10" cy="13.5" rx="5.5" ry="6" fill="currentColor"/>
+  <path d="M4.5,11 Q2.5,8 3.5,6 Q4.5,4.5 6,5.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="3.5" cy="5.5" r="2" fill="currentColor"/>
+  <path d="M15.5,11 Q17.5,8 16.5,6 Q15.5,4.5 14,5.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="16.5" cy="5.5" r="2" fill="currentColor"/>
+  <ellipse cx="10" cy="7" rx="5" ry="2.5" fill="currentColor"/>
+  <ellipse cx="10" cy="5.5" rx="3" ry="2" fill="currentColor"/>
+  <circle cx="10" cy="4" r="1.5" fill="currentColor" opacity="0.9"/>
 </svg>
 SVG;
 
