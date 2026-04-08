@@ -85,6 +85,9 @@ The script can:
 - test browser preflight and authenticated `GET /api/tags`
 - print the exact values to paste into WordPress
 
+Use the final printed values only for browser-based WordPress runtimes such as `playground.wordpress.net`.
+If your WordPress site runs on a normal PHP server, keep using the direct upstream Ollama hostname and its Cloudflare Access header instead.
+
 ## Inputs The Script Prompts For
 
 - `CLOUDFLARE_API_TOKEN`
@@ -119,6 +122,12 @@ Access Header Value: YOUR_LONG_RANDOM_PROXY_TOKEN
 Paste those directly into the plugin settings.
 
 Do not paste the upstream Cloudflare Access JSON header into the plugin when using the Worker proxy path.
+
+For a normal server-hosted WordPress site, do the opposite:
+
+- use the direct upstream Ollama hostname
+- use the upstream Cloudflare Access header
+- do not insert the Worker proxy token unless the WordPress runtime is actually browser-executed
 
 ## What Gets Saved In `.env`
 

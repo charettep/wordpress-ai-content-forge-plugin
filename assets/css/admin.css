@@ -175,7 +175,12 @@
     margin-bottom: 24px;
 }
 
-.acf-logo { font-size: 1.8rem; }
+.acf-logo-image {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    flex-shrink: 0;
+}
 
 /* Cards */
 .acf-card {
@@ -277,13 +282,16 @@
     height: 32px;
     border-radius: 8px;
     flex-shrink: 0;
+    background: var(--acf-bg-subtle);
+    border: 1px solid var(--acf-border);
 }
 
-.acf-logo-claude  { background: #f0ede8; color: #d97707; }
-.acf-logo-openai  { background: #f0f0f0; color: #111; }
-.acf-logo-ollama  { background: #eef3ff; color: #3b5bdb; }
-
-.acf-provider-logo svg { display: block; }
+.acf-provider-logo-image {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    display: block;
+}
 
 /* Logo used inside Default Provider radio cards */
 .acf-provider-card .acf-provider-icon {
@@ -293,11 +301,9 @@
     width: 36px;
     height: 36px;
     border-radius: 8px;
+    background: var(--acf-bg-subtle);
+    border: 1px solid var(--acf-border);
 }
-
-.acf-provider-card .acf-logo-claude::after  { content: "A"; font-weight: 800; font-size: 1rem; color: #d97707; }
-.acf-provider-card .acf-logo-openai::after  { content: "⬡"; font-size: 1.2rem; color: #111; }
-.acf-provider-card .acf-logo-ollama::after  { content: "🦙"; font-size: 1.1rem; }
 
 /* ── API key show/hide wrap ─────────────────────────────────────────────── */
 .acf-key-wrap {

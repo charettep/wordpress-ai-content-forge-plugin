@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.9.1`.
+The current packaged release is `v2.10.0`.
 
 ## Features
 
@@ -28,6 +28,24 @@ The current packaged release is `v2.9.1`.
 - Advanced per-run overrides for model, max output tokens, max thinking tokens, and temperature
 
 ## Changelog
+
+### v2.10.0 — Worker Proxy Guidance + Real Plugin Icons
+
+**Cloudflare Worker proxy**
+
+- updated the autonomous Worker deployment script so its help text and final output clearly distinguish the verified browser-safe Worker proxy path from the direct upstream Access-header path for normal server-hosted WordPress
+- clarified in the docs and wp-admin setup guide that WordPress Playground and other browser-executed WordPress runtimes must use the Worker proxy values after the upstream protected Ollama hostname is already working
+- fixed Gutenberg streaming on scoped WordPress runtimes such as WordPress Playground by resolving the stream endpoint from WordPress's localized REST base URL instead of a hardcoded root-relative `/wp-json/...` path
+
+**Frontend icons**
+
+- replaced the generic plugin and provider glyphs in the admin page and Gutenberg sidebar with the bundled real PNG assets from `images/`
+- the admin menu, wp-admin title area, provider cards, provider headers, and Gutenberg sidebar chrome now use the shipped plugin/provider artwork instead of placeholder shapes or emoji
+
+**Docs**
+
+- updated README and the wp-admin Ollama Setup guide to document the direct-vs-Worker decision explicitly and show the exact Worker proxy values that should be pasted into the plugin
+- refreshed the Worker proxy guide so it explains why the Worker must terminate browser CORS and strip browser-origin headers before forwarding to the protected upstream Ollama hostname
 
 ### v2.9.1 — Worker Proxy Browser Header Fix
 
@@ -127,7 +145,7 @@ The current packaged release is `v2.9.1`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.9.1.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.10.0.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -660,7 +678,7 @@ The script:
 
 - requires the Gutenberg build to exist first
 - stages the plugin under the correct runtime folder name: `ai-content-forge`
-- creates a clean versioned archive such as `ai-content-forge-v2.9.1.zip`
+- creates a clean versioned archive such as `ai-content-forge-v2.10.0.zip`
 - the plugin zip remains suitable for direct `wp-admin` upload and activation
 - includes only runtime plugin files needed for installation
 - refuses to overwrite an existing archive for the same version
@@ -735,6 +753,12 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v2.10.0`
+
+- updated the Worker proxy deployment/help flow and the wp-admin Ollama setup instructions so the browser-safe Worker proxy path is explicit for WordPress Playground and similar runtimes
+- fixed Gutenberg streaming on WordPress Playground by resolving the stream endpoint from the localized REST base URL instead of a hardcoded root-relative `/wp-json/...` path
+- replaced generic plugin/provider UI glyphs with the bundled PNG assets from `images/` across the plugin frontend
 
 ### `v2.9.1`
 

@@ -77,6 +77,7 @@ What it does:
   - creates a proxied placeholder DNS record for the Worker hostname when needed
   - writes a temporary wrangler.jsonc deployment config
   - deploys the Worker via npx wrangler
+  - deploys a Worker that terminates browser CORS itself and strips browser-only headers before contacting the protected upstream Ollama hostname
   - stores the upstream Cloudflare Access service-token credentials as Worker secrets
   - stores one separate proxy token as a Worker secret for WordPress or Playground to send
   - tests the final Worker proxy endpoint with CORS preflight + authenticated GET
@@ -85,6 +86,8 @@ What it does:
 Prerequisite:
   - Your upstream Ollama hostname must already work through Cloudflare Access.
     The easiest way to create that upstream path is ./scripts/ollama-cloudflare-wizard.sh
+  - Use this script for browser-based WordPress runtimes such as WordPress Playground.
+    For normal server-hosted WordPress, keep using the direct upstream Ollama hostname instead.
 EOF
 }
 
@@ -494,6 +497,9 @@ persist_env
 cat <<EOF
 
 Worker proxy deployed successfully.
+
+Use these values for browser-based WordPress runtimes such as WordPress Playground.
+For normal server-hosted WordPress, keep using the direct upstream Ollama hostname and Access header instead.
 
 Paste these into AI Content Forge -> Ollama:
 

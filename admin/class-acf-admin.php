@@ -3,6 +3,28 @@ defined( 'ABSPATH' ) || exit;
 
 class ACF_Admin {
 
+    private static function image_url( string $filename ): string {
+        return ACF_PLUGIN_URL . 'images/' . ltrim( $filename, '/' );
+    }
+
+    private static function provider_icon_filename( string $slug ): string {
+        return match ( $slug ) {
+            'claude' => 'claude-ai-icon.png',
+            'openai' => 'openai-icon.png',
+            'ollama' => 'ollama-icon.png',
+            default  => 'plugin-icon.png',
+        };
+    }
+
+    private static function provider_icon_markup( string $slug, string $base_class = 'acf-provider-logo' ): string {
+        return sprintf(
+            '<span class="%1$s acf-logo-%2$s" aria-hidden="true"><img src="%3$s" alt="" class="acf-provider-logo-image" loading="lazy" decoding="async"></span>',
+            esc_attr( $base_class ),
+            esc_attr( $slug ),
+            esc_url( self::image_url( self::provider_icon_filename( $slug ) ) )
+        );
+    }
+
     public static function init(): void {
         add_action( 'admin_menu',    [ self::class, 'register_menu' ] );
         add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_assets' ] );
@@ -15,7 +37,7 @@ class ACF_Admin {
             'manage_options',
             'ai-content-forge',
             [ self::class, 'render_page' ],
-            'dashicons-superhero',
+            self::image_url( 'plugin-icon.png' ),
             66
         );
     }
@@ -108,11 +130,12 @@ class ACF_Admin {
         $cloudflare_config_url      = 'https://developers.cloudflare.com/tunnel/advanced/local-management/configuration-file/';
         $cloudflare_access_url      = 'https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-apps/';
         $cloudflare_tokens_url      = 'https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/';
+        $cloudflare_workers_url     = 'https://developers.cloudflare.com/workers/';
         $ollama_download_url        = 'https://ollama.com/download/linux';
         ?>
         <div class="wrap acf-settings-wrap">
             <h1 class="acf-page-title">
-                <span class="acf-logo">⚡</span>
+                <img src="<?php echo esc_url( self::image_url( 'plugin-icon.png' ) ); ?>" alt="" class="acf-logo-image" loading="lazy" decoding="async">
                 <?php esc_html_e( 'AI Content Forge', 'ai-content-forge' ); ?>
             </h1>
 
@@ -166,9 +189,7 @@ class ACF_Admin {
                     <!-- ── Claude ──────────────────────────────────── -->
                     <div class="acf-card acf-provider-section" id="section-claude">
                         <div class="acf-provider-header">
-                            <span class="acf-provider-logo acf-logo-claude" aria-hidden="true">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M8.5 14.5 12 8l3.5 6.5"/><line x1="9.5" y1="13" x2="14.5" y2="13"/></svg>
-                            </span>
+                            <?php echo wp_kses_post( self::provider_icon_markup( 'claude' ) ); ?>
                             <h2><?php esc_html_e( 'Anthropic Claude', 'ai-content-forge' ); ?></h2>
                             <span class="acf-provider-status" id="status-claude" aria-live="polite"></span>
                         </div>
@@ -212,9 +233,7 @@ class ACF_Admin {
                     <!-- ── OpenAI ──────────────────────────────────── -->
                     <div class="acf-card acf-provider-section" id="section-openai">
                         <div class="acf-provider-header">
-                            <span class="acf-provider-logo acf-logo-openai" aria-hidden="true">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M22.28 9.28a5.76 5.76 0 0 0-.49-4.73 5.83 5.83 0 0 0-6.27-2.8A5.77 5.77 0 0 0 11.18 0a5.83 5.83 0 0 0-5.57 4.04 5.77 5.77 0 0 0-3.85 2.8 5.83 5.83 0 0 0 .72 6.84 5.77 5.77 0 0 0 .49 4.73 5.83 5.83 0 0 0 6.27 2.8A5.77 5.77 0 0 0 12.82 24a5.83 5.83 0 0 0 5.56-4.04 5.77 5.77 0 0 0 3.85-2.8 5.83 5.83 0 0 0-.72-6.84h-.02ZM12.82 22.5a4.32 4.32 0 0 1-2.77-1 .07.07 0 0 1 .03-.01l4.6-2.66a.76.76 0 0 0 .38-.66v-6.5l1.94 1.12a.07.07 0 0 1 .04.05v5.38a4.34 4.34 0 0 1-4.22 4.28ZM3.3 18.38a4.32 4.32 0 0 1-.52-2.9l.03.02 4.6 2.66a.75.75 0 0 0 .76 0l5.62-3.24v2.24a.08.08 0 0 1-.03.06l-4.65 2.68a4.33 4.33 0 0 1-5.81-1.52ZM2.14 8.1a4.32 4.32 0 0 1 2.25-1.9v5.46a.76.76 0 0 0 .38.66l5.6 3.24-1.94 1.12a.08.08 0 0 1-.07 0L3.72 13.9A4.34 4.34 0 0 1 2.14 8.1Zm15.96 3.73-5.62-3.24 1.94-1.12a.07.07 0 0 1 .07 0l4.64 2.68a4.33 4.33 0 0 1-.67 7.82v-5.48a.76.76 0 0 0-.36-.66Zm1.93-2.92-.03-.02-4.6-2.66a.75.75 0 0 0-.76 0L9.02 9.47V7.23a.07.07 0 0 1 .03-.06l4.64-2.68a4.33 4.33 0 0 1 6.34 4.42ZM7.95 12.96l-1.94-1.12a.08.08 0 0 1-.04-.05V6.41a4.33 4.33 0 0 1 7.1-3.32.05.05 0 0 1-.03.01L8.44 5.76a.76.76 0 0 0-.38.66l-.01 6.5-.1.04Zm1.06-2.28 2.5-1.44 2.5 1.44v2.88l-2.5 1.44-2.5-1.44v-2.88Z"/></svg>
-                            </span>
+                            <?php echo wp_kses_post( self::provider_icon_markup( 'openai' ) ); ?>
                             <h2><?php esc_html_e( 'OpenAI', 'ai-content-forge' ); ?></h2>
                             <span class="acf-provider-status" id="status-openai" aria-live="polite"></span>
                         </div>
@@ -258,9 +277,7 @@ class ACF_Admin {
                     <!-- ── Ollama ──────────────────────────────────── -->
                     <div class="acf-card acf-provider-section" id="section-ollama">
                         <div class="acf-provider-header">
-                            <span class="acf-provider-logo acf-logo-ollama" aria-hidden="true">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2C9.1 2 6.75 4.35 6.75 7.25c0 .67.13 1.3.37 1.89C5.72 9.96 4.75 11.6 4.75 13.5c0 1.41.52 2.69 1.37 3.67A4.25 4.25 0 0 0 7.75 22h8.5a4.25 4.25 0 0 0 1.63-4.83 5.24 5.24 0 0 0 1.37-3.67c0-1.9-.97-3.54-2.37-4.36.24-.59.37-1.22.37-1.89C17.25 4.35 14.9 2 12 2zm0 2c1.79 0 3.25 1.46 3.25 3.25S13.79 10.5 12 10.5 8.75 9.04 8.75 7.25 10.21 4 12 4zm0 8c1.9 0 3.45 1.2 3.98 2.85-.64-.28-1.29-.35-1.98-.35-.9 0-1.75.22-2.5.61-.75-.39-1.6-.61-2.5-.61-.69 0-1.34.07-1.98.35C7.55 13.2 9.1 12 12 12zm-2 4.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm4 0a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"/></svg>
-                            </span>
+                            <?php echo wp_kses_post( self::provider_icon_markup( 'ollama' ) ); ?>
                             <h2><?php esc_html_e( 'Ollama', 'ai-content-forge' ); ?></h2>
                             <span class="acf-provider-status" id="status-ollama" aria-live="polite"></span>
                         </div>
@@ -363,7 +380,7 @@ class ACF_Admin {
                             <label class="acf-provider-card <?php echo $settings['default_provider'] === $slug ? 'selected' : ''; ?>">
                                 <input type="radio" name="<?php echo esc_attr( $opt ); ?>[default_provider]"
                                        value="<?php echo esc_attr( $slug ); ?>" <?php echo $checked; ?>>
-                                <span class="acf-provider-icon acf-logo-<?php echo esc_attr( $slug ); ?>"></span>
+                                <?php echo wp_kses_post( self::provider_icon_markup( $slug, 'acf-provider-icon' ) ); ?>
                                 <span class="acf-provider-name"><?php echo esc_html( $card_labels[ $slug ] ); ?></span>
                             </label>
                             <?php endforeach; ?>
@@ -489,13 +506,14 @@ class ACF_Admin {
 
                         <div class="acf-guide-nav" aria-label="<?php esc_attr_e( 'Ollama guide sections', 'ai-content-forge' ); ?>">
                             <a href="#acf-ollama-guide-choose"><?php esc_html_e( '1. Choose the right path', 'ai-content-forge' ); ?></a>
-                            <a href="#acf-ollama-guide-cloudflare"><?php esc_html_e( '2. Create Cloudflare + domain', 'ai-content-forge' ); ?></a>
-                            <a href="#acf-ollama-guide-ollama"><?php esc_html_e( '3. Install Ollama', 'ai-content-forge' ); ?></a>
-                            <a href="#acf-ollama-guide-cloudflared"><?php esc_html_e( '4. Install cloudflared', 'ai-content-forge' ); ?></a>
-                            <a href="#acf-ollama-guide-tunnel"><?php esc_html_e( '5. Create the tunnel', 'ai-content-forge' ); ?></a>
-                            <a href="#acf-ollama-guide-access"><?php esc_html_e( '6. Lock it down with Access', 'ai-content-forge' ); ?></a>
-                            <a href="#acf-ollama-guide-wordpress"><?php esc_html_e( '7. Paste values into WordPress', 'ai-content-forge' ); ?></a>
-                            <a href="#acf-ollama-guide-wsl"><?php esc_html_e( '8. WSL notes', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-browser"><?php esc_html_e( '2. If you use Playground/browser WordPress', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-cloudflare"><?php esc_html_e( '3. Create Cloudflare + domain', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-ollama"><?php esc_html_e( '4. Install Ollama', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-cloudflared"><?php esc_html_e( '5. Install cloudflared', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-tunnel"><?php esc_html_e( '6. Create the tunnel', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-access"><?php esc_html_e( '7. Lock it down with Access', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-wordpress"><?php esc_html_e( '8. Paste values into WordPress', 'ai-content-forge' ); ?></a>
+                            <a href="#acf-ollama-guide-wsl"><?php esc_html_e( '9. WSL notes', 'ai-content-forge' ); ?></a>
                         </div>
 
                     <div class="acf-guide-note">
@@ -514,6 +532,7 @@ class ACF_Admin {
                             <li><a href="<?php echo esc_url( $cloudflare_config_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Cloudflare Tunnel config file reference', 'ai-content-forge' ); ?></a></li>
                             <li><a href="<?php echo esc_url( $cloudflare_access_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Create a Cloudflare Access self-hosted app', 'ai-content-forge' ); ?></a></li>
                             <li><a href="<?php echo esc_url( $cloudflare_tokens_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Create Cloudflare service tokens and single-header auth', 'ai-content-forge' ); ?></a></li>
+                            <li><a href="<?php echo esc_url( $cloudflare_workers_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Cloudflare Workers documentation', 'ai-content-forge' ); ?></a></li>
                         </ul>
                     </div>
 
@@ -527,8 +546,19 @@ Access Header Value: leave blank</code></pre>
                         <p><?php esc_html_e( 'Before you continue, choose and write down these four values on paper: your main domain, your Ollama subdomain, your tunnel name, and the Ollama model you want to use. Example: main domain example.com, Ollama subdomain ollama.example.com, tunnel name home-ollama, model llama3.2:3b.', 'ai-content-forge' ); ?></p>
                     </details>
 
+                    <details class="acf-guide-detail" id="acf-ollama-guide-browser">
+                        <summary><?php esc_html_e( '2. If WordPress runs in the browser, use the Worker proxy path after the upstream path works', 'ai-content-forge' ); ?></summary>
+                        <p><?php esc_html_e( 'WordPress Playground and other browser-executed WordPress runtimes should not send the upstream Cloudflare Access Authorization header directly to Ollama. Use the direct upstream path only as the first validation step, then deploy the Worker proxy and paste the Worker proxy values into this plugin.', 'ai-content-forge' ); ?></p>
+                        <pre class="acf-code-block"><code>./scripts/create-ollama-worker-proxy.sh</code></pre>
+                        <p><?php esc_html_e( 'That script deploys the Worker, creates or reuses the public Worker hostname, writes the Worker secrets, tests browser preflight plus authenticated GET /api/tags, and prints the exact Base URL, Header Name, and Header Value for this plugin.', 'ai-content-forge' ); ?></p>
+                        <pre class="acf-code-block"><code>Base URL: https://ollama-proxy.example.com
+Access Header Name: X-Ollama-Proxy-Token
+Access Header Value: YOUR_LONG_RANDOM_PROXY_TOKEN</code></pre>
+                        <p><?php esc_html_e( 'If you are using normal server-hosted WordPress instead of Playground, skip this section and continue with the direct upstream Access path below.', 'ai-content-forge' ); ?></p>
+                    </details>
+
                     <details class="acf-guide-detail" id="acf-ollama-guide-cloudflare">
-                        <summary><?php esc_html_e( '2. Create Cloudflare access to your domain if you do not already have it', 'ai-content-forge' ); ?></summary>
+                        <summary><?php esc_html_e( '3. Create Cloudflare access to your domain if you do not already have it', 'ai-content-forge' ); ?></summary>
                         <p><?php esc_html_e( 'If you do not already have a Cloudflare account, open the Cloudflare sign-up page and create one first. Then add your domain to Cloudflare. Cloudflare will show you two nameservers. You must copy those two nameservers into your domain registrar account, where you bought the domain name.', 'ai-content-forge' ); ?></p>
                         <p><?php esc_html_e( 'Do not continue until your domain shows as Active inside Cloudflare. If the domain is not active yet, the hostname for Ollama will not work.', 'ai-content-forge' ); ?></p>
                         <ol class="acf-step-list">
@@ -541,7 +571,7 @@ Access Header Value: leave blank</code></pre>
                     </details>
 
                     <details class="acf-guide-detail" id="acf-ollama-guide-ollama">
-                        <summary><?php esc_html_e( '3. Install Ollama locally and confirm it works before you add any tunnel', 'ai-content-forge' ); ?></summary>
+                        <summary><?php esc_html_e( '4. Install Ollama locally and confirm it works before you add any tunnel', 'ai-content-forge' ); ?></summary>
                         <p><?php esc_html_e( 'The easiest beginner path on Ubuntu, Debian, or Ubuntu inside WSL is to install Ollama first, pull one model, and test it locally. If this local test fails, the tunnel setup will fail too.', 'ai-content-forge' ); ?></p>
                         <pre class="acf-code-block"><code>curl -fsSL https://ollama.com/install.sh | sh
 ollama pull llama3.2:3b
@@ -552,7 +582,7 @@ curl http://localhost:11434/api/tags</code></pre>
                     </details>
 
                     <details class="acf-guide-detail" id="acf-ollama-guide-cloudflared">
-                        <summary><?php esc_html_e( '4. Install cloudflared on the same machine where Ollama is running', 'ai-content-forge' ); ?></summary>
+                        <summary><?php esc_html_e( '5. Install cloudflared on the same machine where Ollama is running', 'ai-content-forge' ); ?></summary>
                         <p><?php esc_html_e( 'Install cloudflared on the same computer, VM, server, or WSL Ubuntu instance that can already reach http://localhost:11434. Keeping Ollama and cloudflared in the same environment is the least confusing setup for beginners.', 'ai-content-forge' ); ?></p>
                         <pre class="acf-code-block"><code>sudo mkdir -p --mode=0755 /usr/share/keyrings
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
@@ -564,7 +594,7 @@ cloudflared --version</code></pre>
                     </details>
 
                     <details class="acf-guide-detail" id="acf-ollama-guide-tunnel">
-                        <summary><?php esc_html_e( '5. Create the tunnel and publish a dedicated Ollama hostname', 'ai-content-forge' ); ?></summary>
+                        <summary><?php esc_html_e( '6. Create the tunnel and publish a dedicated Ollama hostname', 'ai-content-forge' ); ?></summary>
                         <p><?php esc_html_e( 'The easiest CLI flow is: log into Cloudflare, create a tunnel, attach a DNS hostname to it, and point that hostname at your local Ollama port. Use a hostname dedicated to Ollama only, such as ollama.example.com.', 'ai-content-forge' ); ?></p>
                         <pre class="acf-code-block"><code>cloudflared login
 cloudflared tunnel create home-ollama
@@ -586,7 +616,7 @@ cloudflared tunnel --config /etc/cloudflared/config.yml run</code></pre>
                     </details>
 
                     <details class="acf-guide-detail" id="acf-ollama-guide-access">
-                        <summary><?php esc_html_e( '6. Protect the hostname with Cloudflare Access and convert it to one header', 'ai-content-forge' ); ?></summary>
+                        <summary><?php esc_html_e( '7. Protect the hostname with Cloudflare Access and convert it to one header', 'ai-content-forge' ); ?></summary>
                         <p><?php esc_html_e( 'Do not expose the Ollama hostname without protection. In Cloudflare Zero Trust, create a Self-hosted application for your Ollama hostname, add a Service Auth policy, and create one service token. Cloudflare will show you a Client ID and a Client Secret. Save them immediately.', 'ai-content-forge' ); ?></p>
                         <ol class="acf-step-list">
                             <li><?php esc_html_e( 'Open Cloudflare Zero Trust.', 'ai-content-forge' ); ?></li>
@@ -621,17 +651,18 @@ curl "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/access/apps/$APP
                     </details>
 
                     <details class="acf-guide-detail" id="acf-ollama-guide-wordpress">
-                        <summary><?php esc_html_e( '7. Paste the final values into WordPress', 'ai-content-forge' ); ?></summary>
-                        <p><?php esc_html_e( 'When the curl test above works, return to this plugin page and paste exactly these three values:', 'ai-content-forge' ); ?></p>
+                        <summary><?php esc_html_e( '8. Paste the final values into WordPress', 'ai-content-forge' ); ?></summary>
+                        <p><?php esc_html_e( 'When the direct upstream curl test above works, return to this plugin page and paste exactly these three values into a normal server-hosted WordPress site:', 'ai-content-forge' ); ?></p>
                         <pre class="acf-code-block"><code>Base URL: https://ollama.example.com
 Access Header Name: Authorization
 Access Header Value: {"cf-access-client-id":"YOUR_CLIENT_ID","cf-access-client-secret":"YOUR_CLIENT_SECRET"}</code></pre>
+                        <p><?php esc_html_e( 'If you are using WordPress Playground or another browser-executed WordPress runtime, do not paste the Authorization JSON here. Run the Worker proxy script instead and paste its X-Ollama-Proxy-Token values.', 'ai-content-forge' ); ?></p>
                         <p><?php esc_html_e( 'The connection check runs automatically. Wait for the green Connected status. Then open the Model dropdown, choose your Ollama model, and click Save Settings.', 'ai-content-forge' ); ?></p>
                         <p><?php esc_html_e( 'If Connected does not appear, do not keep changing random fields in WordPress. Go back one step and re-run the curl test against the protected hostname until that succeeds first.', 'ai-content-forge' ); ?></p>
                     </details>
 
                     <details class="acf-guide-detail" id="acf-ollama-guide-wsl">
-                        <summary><?php esc_html_e( '8. Extra notes for Ubuntu running inside WSL', 'ai-content-forge' ); ?></summary>
+                        <summary><?php esc_html_e( '9. Extra notes for Ubuntu running inside WSL', 'ai-content-forge' ); ?></summary>
                         <p><?php esc_html_e( 'The least confusing setup is to run both Ollama and cloudflared inside the same Ubuntu/WSL environment. Avoid splitting them across Windows and WSL unless you already understand the networking difference.', 'ai-content-forge' ); ?></p>
                         <p><?php esc_html_e( 'If systemctl is unavailable in your WSL environment, keep two terminals open: one running ollama serve and another running cloudflared tunnel --config /etc/cloudflared/config.yml run. If you later enable systemd in WSL, you can move both services into systemd.', 'ai-content-forge' ); ?></p>
                         <p><?php esc_html_e( 'If you reboot Windows or shut down WSL, both services stop. Start them again before testing WordPress.', 'ai-content-forge' ); ?></p>
@@ -642,7 +673,8 @@ Access Header Value: {"cf-access-client-id":"YOUR_CLIENT_ID","cf-access-client-s
                         <ol class="acf-step-list">
                             <li><?php esc_html_e( 'curl http://localhost:11434/api/tags on the Ollama machine', 'ai-content-forge' ); ?></li>
                             <li><?php esc_html_e( 'curl with the Authorization header against https://your-ollama-hostname/api/tags', 'ai-content-forge' ); ?></li>
-                            <li><?php esc_html_e( 'only after both curl tests succeed, return to WordPress and wait for Connected', 'ai-content-forge' ); ?></li>
+                            <li><?php esc_html_e( 'if you use Playground or another browser-executed WordPress runtime, run ./scripts/create-ollama-worker-proxy.sh and test the Worker hostname next', 'ai-content-forge' ); ?></li>
+                            <li><?php esc_html_e( 'only after the correct upstream or Worker test succeeds, return to WordPress and wait for Connected', 'ai-content-forge' ); ?></li>
                         </ol>
                     </div>
                 </div><!-- /acf-card acf-setup-guide -->

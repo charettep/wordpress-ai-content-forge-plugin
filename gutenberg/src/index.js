@@ -25,7 +25,28 @@ import { useSelect, useDispatch } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
 
-const { restNamespace, settings, typeLabels, metaKeys, nonce } = window.acfGutenberg;
+const {
+	restNamespace,
+	restUrl = '',
+	settings,
+	typeLabels,
+	metaKeys,
+	nonce,
+	assetUrls = {},
+} = window.acfGutenberg;
+const pluginIconUrl = assetUrls.pluginIcon || '';
+const providerIconUrls = assetUrls.providerIcons || {};
+const normalizedRestUrl = String( restUrl || '' ).replace( /\/+$/, '' );
+
+const buildRestEndpointUrl = ( endpoint ) => {
+	const suffix = String( endpoint || '' ).replace( /^\/+/, '' );
+
+	if ( normalizedRestUrl ) {
+		return `${ normalizedRestUrl }/${ suffix }`;
+	}
+
+	return `/wp-json/${ restNamespace }/${ suffix }`;
+};
 
 const NEXT_CONTROL_PROPS = {
 	__next40pxDefaultSize: true,
@@ -86,6 +107,56 @@ const CONTEXT_SCOPE_OPTIONS = [
 	{ value: 'custom', label: 'Custom paste' },
 	{ value: 'none', label: 'None' },
 ];
+
+const PROVIDER_LABELS = {
+	claude: 'Anthropic Claude',
+	openai: 'OpenAI',
+	ollama: 'Ollama',
+};
+
+function ProviderIcon( { provider, size = 18 } ) {
+	const iconUrl = providerIconUrls[ provider ];
+
+	if ( ! iconUrl ) {
+		return null;
+	}
+
+	return (
+		<img
+			src={ iconUrl }
+			alt=""
+			aria-hidden="true"
+			style={ {
+				width: `${ size }px`,
+				height: `${ size }px`,
+				objectFit: 'contain',
+				borderRadius: '4px',
+				flexShrink: 0,
+			} }
+		/>
+	);
+}
+
+function PluginIconImage( { size = 20 } ) {
+	if ( ! pluginIconUrl ) {
+		return <Icon icon={ create } />;
+	}
+
+	return (
+		<img
+			src={ pluginIconUrl }
+			alt=""
+			aria-hidden="true"
+			style={ {
+				width: `${ size }px`,
+				height: `${ size }px`,
+				objectFit: 'contain',
+				borderRadius: '5px',
+				flexShrink: 0,
+			} }
+		/>
+	);
+}
 
 // ── Helper: apply generated content to post ───────────────────────────────────
 function useApplyResult() {
@@ -292,7 +363,7 @@ function AcfSidebar() {
 
 	const streamGenerate = async ( payload, signal, onChunk, onUsage ) => {
 		const response = await window.fetch(
-			`/wp-json/${ restNamespace }/generate-stream`,
+			buildRestEndpointUrl( 'generate-stream' ),
 			{
 				method: 'POST',
 				headers: {
@@ -622,8 +693,9 @@ function AcfSidebar() {
 					background: '#2e7d32',
 					flexShrink: 0,
 				} } />
+				<ProviderIcon provider={ activeProvider } />
 				<span>
-					{ activeProvider } { activeModel !== 'auto' ? `· ${ activeModel }` : '' }
+					{ PROVIDER_LABELS[ activeProvider ] || activeProvider } { activeModel !== 'auto' ? `· ${ activeModel }` : '' }
 				</span>
 			</div>
 
@@ -861,7 +933,10 @@ function AcfSidebar() {
 							<>
 								<div>
 									<strong>{ __( 'Provider:', 'ai-content-forge' ) }</strong>{ ' ' }
-									{ runUsage.provider || 'unknown' }
+									<span style={ { display: 'inline-flex', alignItems: 'center', gap: '6px' } }>
+										<ProviderIcon provider={ runUsage.provider } size={ 16 } />
+										<span>{ PROVIDER_LABELS[ runUsage.provider ] || runUsage.provider || 'unknown' }</span>
+									</span>
 								</div>
 								<div>
 									<strong>{ __( 'Model:', 'ai-content-forge' ) }</strong>{ ' ' }
@@ -916,8 +991,9 @@ function AcfSidebar() {
 						{ currentPostUsageRows.map( ( row ) => (
 							<PanelRow key={ `${ row.postId }-${ row.provider }` }>
 								<div style={ { width: '100%', fontSize: '12px', lineHeight: 1.5 } }>
-									<div>
-										<strong>{ row.provider }</strong>{ row.model ? ` (${ row.model })` : '' }
+									<div style={ { display: 'inline-flex', alignItems: 'center', gap: '6px' } }>
+										<ProviderIcon provider={ row.provider } size={ 16 } />
+										<strong>{ PROVIDER_LABELS[ row.provider ] || row.provider }</strong>{ row.model ? ` (${ row.model })` : '' }
 										{ ' · ' }{ row.runs } { row.runs === 1 ? __( 'run', 'ai-content-forge' ) : __( 'runs', 'ai-content-forge' ) }
 									</div>
 									<div>
@@ -994,7 +1070,7 @@ function AcfSidebar() {
 }
 
 // ── Register sidebar ──────────────────────────────────────────────────────────
-const CreateIcon = () => <Icon icon={ create } />;
+const CreateIcon = () => <PluginIconImage />;
 
 registerPlugin( 'ai-content-forge', {
 	render: () => (

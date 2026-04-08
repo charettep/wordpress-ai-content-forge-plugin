@@ -86,6 +86,14 @@ class ACF_Gutenberg {
                 'meta_description' => __( 'Meta Description',  'ai-content-forge' ),
                 'excerpt'          => __( 'Excerpt',           'ai-content-forge' ),
             ],
+            'assetUrls'     => [
+                'pluginIcon'    => ACF_PLUGIN_URL . 'images/plugin-icon.png',
+                'providerIcons' => [
+                    'claude' => ACF_PLUGIN_URL . 'images/claude-ai-icon.png',
+                    'openai' => ACF_PLUGIN_URL . 'images/openai-icon.png',
+                    'ollama' => ACF_PLUGIN_URL . 'images/ollama-icon.png',
+                ],
+            ],
         ] );
     }
 }
