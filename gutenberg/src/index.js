@@ -34,7 +34,7 @@ const {
 	metaKeys,
 	nonce,
 	assetUrls = {},
-} = window.acfGutenberg;
+} = window.aigGutenberg;
 const pluginIconUrl = assetUrls.pluginIcon || '';
 const providerIconUrls = assetUrls.providerIcons || {};
 const normalizedRestUrl = String( restUrl || '' ).replace( /\/+$/, '' );
@@ -307,7 +307,7 @@ function AcfSidebar() {
 				}
 
 				setModelsError(
-					err?.message || __( 'Unable to load provider models.', 'ai-content-forge' )
+					err?.message || __( 'Unable to load provider models.', 'ai-genie' )
 				);
 			} )
 			.finally( () => {
@@ -403,7 +403,7 @@ function AcfSidebar() {
 			}
 
 			throw new Error(
-				fallback.message || __( 'Unknown error', 'ai-content-forge' )
+				fallback.message || __( 'Unknown error', 'ai-genie' )
 			);
 		}
 
@@ -430,7 +430,7 @@ function AcfSidebar() {
 			} else if ( event.name === 'error' ) {
 				throw new Error(
 					event.data?.message ||
-						__( 'Request failed', 'ai-content-forge' )
+						__( 'Request failed', 'ai-genie' )
 				);
 			}
 		};
@@ -499,7 +499,7 @@ function AcfSidebar() {
 			if ( ! selectedBlocks || selectedBlocks.length === 0 ) {
 				setLoading( false );
 				setError(
-					__( 'No blocks are selected. Select blocks or change Context Scope.', 'ai-content-forge' )
+					__( 'No blocks are selected. Select blocks or change Context Scope.', 'ai-genie' )
 				);
 				return;
 			}
@@ -588,7 +588,7 @@ function AcfSidebar() {
 			}
 
 			setError(
-				e?.message || __( 'Request failed', 'ai-content-forge' )
+				e?.message || __( 'Request failed', 'ai-genie' )
 			);
 		} finally {
 			abortControllerRef.current = null;
@@ -740,13 +740,13 @@ function AcfSidebar() {
 
 			{ /* ── Generate ───────────────────────────── */ }
 			<PanelBody
-				title={ __( 'Generate', 'ai-content-forge' ) }
+				title={ __( 'Generate', 'ai-genie' ) }
 				initialOpen={ true }
 			>
 				<PanelRow>
 					<SelectControl
 						{ ...NEXT_CONTROL_PROPS }
-						label={ __( 'Content Type', 'ai-content-forge' ) }
+						label={ __( 'Content Type', 'ai-genie' ) }
 						value={ type }
 						options={ TYPE_OPTIONS }
 						onChange={ setType }
@@ -756,7 +756,7 @@ function AcfSidebar() {
 				<PanelRow>
 					<SelectControl
 						{ ...NEXT_CONTROL_PROPS }
-						label={ __( 'AI Provider', 'ai-content-forge' ) }
+						label={ __( 'AI Provider', 'ai-genie' ) }
 						value={ provider }
 						options={ PROVIDER_OPTIONS }
 						onChange={ setProvider }
@@ -768,7 +768,7 @@ function AcfSidebar() {
 						{ ...NEXT_CONTROL_PROPS }
 						label={ __(
 							'Keywords / Topic hints',
-							'ai-content-forge'
+							'ai-genie'
 						) }
 						value={ keywords }
 						onChange={ setKeywords }
@@ -779,7 +779,7 @@ function AcfSidebar() {
 				<PanelRow>
 					<SelectControl
 						{ ...NEXT_CONTROL_PROPS }
-						label={ __( 'Tone', 'ai-content-forge' ) }
+						label={ __( 'Tone', 'ai-genie' ) }
 						value={ tone }
 						options={ TONE_OPTIONS }
 						onChange={ setTone }
@@ -789,7 +789,7 @@ function AcfSidebar() {
 				<PanelRow>
 					<SelectControl
 						{ ...NEXT_CONTROL_PROPS }
-						label={ __( 'Language', 'ai-content-forge' ) }
+						label={ __( 'Language', 'ai-genie' ) }
 						value={ language }
 						options={ LANG_OPTIONS }
 						onChange={ setLanguage }
@@ -799,7 +799,7 @@ function AcfSidebar() {
 				<PanelRow>
 					<SelectControl
 						{ ...NEXT_CONTROL_PROPS }
-						label={ __( 'Context Scope', 'ai-content-forge' ) }
+						label={ __( 'Context Scope', 'ai-genie' ) }
 						value={ contextScope }
 						options={ CONTEXT_SCOPE_OPTIONS }
 						onChange={ setContextScope }
@@ -810,11 +810,11 @@ function AcfSidebar() {
 					<PanelRow>
 						<TextareaControl
 							{ ...NEXT_TEXTAREA_PROPS }
-							label={ __( 'Custom Context', 'ai-content-forge' ) }
+							label={ __( 'Custom Context', 'ai-genie' ) }
 							value={ customContext }
 							onChange={ setCustomContext }
 							rows={ 4 }
-							placeholder={ __( 'Paste any reference text to guide the generation.', 'ai-content-forge' ) }
+							placeholder={ __( 'Paste any reference text to guide the generation.', 'ai-genie' ) }
 						/>
 					</PanelRow>
 				) }
@@ -824,7 +824,7 @@ function AcfSidebar() {
 						<PanelRow>
 							<SelectControl
 								{ ...NEXT_CONTROL_PROPS }
-								label={ __( 'Structure', 'ai-content-forge' ) }
+								label={ __( 'Structure', 'ai-genie' ) }
 								value={ structure }
 								options={ STRUCTURE_OPTIONS }
 								onChange={ setStructure }
@@ -834,7 +834,7 @@ function AcfSidebar() {
 						<PanelRow>
 							<TextControl
 								{ ...NEXT_CONTROL_PROPS }
-								label={ __( 'TARGET LENGTH (WORDS)', 'ai-content-forge' ) }
+								label={ __( 'TARGET LENGTH (WORDS)', 'ai-genie' ) }
 								value={ targetLength }
 								type="number"
 								min={ 1 }
@@ -842,13 +842,13 @@ function AcfSidebar() {
 								step={ 1 }
 								onChange={ ( value ) => setTargetLength( normalizeTargetLengthInput( value ) ) }
 								onBlur={ commitTargetLengthInput }
-								help={ __( 'Type an exact word target from 1 to 10000. Default: 900.', 'ai-content-forge' ) }
+								help={ __( 'Type an exact word target from 1 to 10000. Default: 900.', 'ai-genie' ) }
 							/>
 						</PanelRow>
 						<PanelRow>
 							<div style={ { width: '100%' } }>
 								<RangeControl
-									label={ __( 'Length Slider', 'ai-content-forge' ) }
+									label={ __( 'Length Slider', 'ai-genie' ) }
 									value={ clampNumber( targetLength || 900, 1, 10000 ) }
 									onChange={ ( value ) => setTargetLength( String( clampNumber( value, 1, 10000 ) ) ) }
 									min={ 1 }
@@ -872,11 +872,11 @@ function AcfSidebar() {
 							<>
 								<Spinner />{ ' ' }
 								{ stopping
-									? __( 'Stopping…', 'ai-content-forge' )
-									: __( 'Generating…', 'ai-content-forge' ) }
+									? __( 'Stopping…', 'ai-genie' )
+									: __( 'Generating…', 'ai-genie' ) }
 							</>
 						) : (
-							__( '⚡ Generate', 'ai-content-forge' )
+							__( '⚡ Generate', 'ai-genie' )
 						) }
 					</Button>
 				</PanelRow>
@@ -890,8 +890,8 @@ function AcfSidebar() {
 							style={ { width: '100%', justifyContent: 'center' } }
 						>
 							{ stopping
-								? __( 'Stopping…', 'ai-content-forge' )
-								: __( 'Stop', 'ai-content-forge' ) }
+								? __( 'Stopping…', 'ai-genie' )
+								: __( 'Stop', 'ai-genie' ) }
 						</Button>
 					</PanelRow>
 				) }
@@ -906,7 +906,7 @@ function AcfSidebar() {
 
 			{ /* ── Advanced ───────────────────────────── */ }
 			<PanelBody
-				title={ __( 'Advanced', 'ai-content-forge' ) }
+				title={ __( 'Advanced', 'ai-genie' ) }
 				initialOpen={ false }
 			>
 				{ modelsError && (
@@ -919,15 +919,15 @@ function AcfSidebar() {
 					<PanelRow>
 						<SelectControl
 							{ ...NEXT_CONTROL_PROPS }
-							label={ __( 'Model Override', 'ai-content-forge' ) }
+							label={ __( 'Model Override', 'ai-genie' ) }
 							value={ modelOverride }
 							options={ modelOptions }
 							onChange={ setModelOverride }
 							disabled={ modelsLoading }
 							help={
 								modelsLoading
-									? __( 'Loading provider models…', 'ai-content-forge' )
-									: __( 'Leave set to Default to use the saved provider model.', 'ai-content-forge' )
+									? __( 'Loading provider models…', 'ai-genie' )
+									: __( 'Leave set to Default to use the saved provider model.', 'ai-genie' )
 							}
 						/>
 					</PanelRow>
@@ -935,11 +935,11 @@ function AcfSidebar() {
 					<PanelRow>
 						<TextControl
 							{ ...NEXT_CONTROL_PROPS }
-							label={ __( 'Model Override', 'ai-content-forge' ) }
+							label={ __( 'Model Override', 'ai-genie' ) }
 							value={ modelOverride }
 							onChange={ setModelOverride }
-							placeholder={ __( 'e.g. gpt-5.1', 'ai-content-forge' ) }
-							help={ __( 'Enter a model name if you want to override the saved provider model.', 'ai-content-forge' ) }
+							placeholder={ __( 'e.g. gpt-5.1', 'ai-genie' ) }
+							help={ __( 'Enter a model name if you want to override the saved provider model.', 'ai-genie' ) }
 						/>
 					</PanelRow>
 				) }
@@ -947,30 +947,30 @@ function AcfSidebar() {
 				<PanelRow>
 					<TextControl
 						{ ...NEXT_CONTROL_PROPS }
-						label={ __( 'Max Output Tokens', 'ai-content-forge' ) }
+						label={ __( 'Max Output Tokens', 'ai-genie' ) }
 						type="number"
 						min={ 1 }
 						value={ maxOutputTokens }
 						onChange={ setMaxOutputTokens }
-						help={ __( 'Defaults to the global setting unless overridden here.', 'ai-content-forge' ) }
+						help={ __( 'Defaults to the global setting unless overridden here.', 'ai-genie' ) }
 					/>
 				</PanelRow>
 
 				<PanelRow>
 					<TextControl
 						{ ...NEXT_CONTROL_PROPS }
-						label={ __( 'Max Thinking Tokens', 'ai-content-forge' ) }
+						label={ __( 'Max Thinking Tokens', 'ai-genie' ) }
 						type="number"
 						min={ 0 }
 						value={ maxThinkingTokens }
 						onChange={ setMaxThinkingTokens }
-						help={ __( 'Controls reasoning budget for thinking-capable models.', 'ai-content-forge' ) }
+						help={ __( 'Controls reasoning budget for thinking-capable models.', 'ai-genie' ) }
 					/>
 				</PanelRow>
 
 				<PanelRow>
 					<RangeControl
-						label={ __( 'Temperature', 'ai-content-forge' ) }
+						label={ __( 'Temperature', 'ai-genie' ) }
 						value={ temperature }
 						onChange={ setTemperature }
 						min={ 0 }
@@ -982,12 +982,12 @@ function AcfSidebar() {
 				<PanelRow>
 					<TextareaControl
 						{ ...NEXT_TEXTAREA_PROPS }
-						label={ __( 'Prompt Template Override', 'ai-content-forge' ) }
+						label={ __( 'Prompt Template Override', 'ai-genie' ) }
 						value={ promptOverride }
 						onChange={ setPromptOverride }
 						rows={ 10 }
-						placeholder={ __( 'Leave blank to use the saved prompt template for this content type.', 'ai-content-forge' ) }
-						help={ __( 'Optional. This overrides the saved prompt template for this generation only.', 'ai-content-forge' ) }
+						placeholder={ __( 'Leave blank to use the saved prompt template for this content type.', 'ai-genie' ) }
+						help={ __( 'Optional. This overrides the saved prompt template for this generation only.', 'ai-genie' ) }
 					/>
 				</PanelRow>
 
@@ -998,14 +998,14 @@ function AcfSidebar() {
 							onClick={ () => setPromptOverride( promptTemplates[ type ] || '' ) }
 							style={ { flex: 1, justifyContent: 'center' } }
 						>
-							{ __( 'Load Saved Prompt', 'ai-content-forge' ) }
+							{ __( 'Load Saved Prompt', 'ai-genie' ) }
 						</Button>
 						<Button
 							variant="tertiary"
 							onClick={ () => setPromptOverride( '' ) }
 							style={ { flex: 1, justifyContent: 'center' } }
 						>
-							{ __( 'Clear Override', 'ai-content-forge' ) }
+							{ __( 'Clear Override', 'ai-genie' ) }
 						</Button>
 					</div>
 				</PanelRow>
@@ -1013,7 +1013,7 @@ function AcfSidebar() {
 				<PanelRow>
 					<div style={ { width: '100%' } }>
 						<div style={ { marginBottom: '6px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase', color: '#555' } }>
-							{ __( 'Available Placeholders', 'ai-content-forge' ) }
+							{ __( 'Available Placeholders', 'ai-genie' ) }
 						</div>
 						<div style={ { display: 'flex', flexWrap: 'wrap', gap: '6px' } }>
 							{ PROMPT_PLACEHOLDERS.map( ( placeholder ) => (
@@ -1027,7 +1027,7 @@ function AcfSidebar() {
 			</PanelBody>
 
 			<PanelBody
-				title={ __( 'Run Usage', 'ai-content-forge' ) }
+				title={ __( 'Run Usage', 'ai-genie' ) }
 				initialOpen={ true }
 			>
 				<PanelRow>
@@ -1035,48 +1035,48 @@ function AcfSidebar() {
 						{ runUsage ? (
 							<>
 								<div>
-									<strong>{ __( 'Provider:', 'ai-content-forge' ) }</strong>{ ' ' }
+									<strong>{ __( 'Provider:', 'ai-genie' ) }</strong>{ ' ' }
 									<span style={ { display: 'inline-flex', alignItems: 'center', gap: '6px' } }>
 										<ProviderIcon provider={ runUsage.provider } size={ 16 } />
 										<span>{ PROVIDER_LABELS[ runUsage.provider ] || runUsage.provider || 'unknown' }</span>
 									</span>
 								</div>
 								<div>
-									<strong>{ __( 'Model:', 'ai-content-forge' ) }</strong>{ ' ' }
+									<strong>{ __( 'Model:', 'ai-genie' ) }</strong>{ ' ' }
 									{ runUsage.model || 'unknown' }
 								</div>
 								<div>
-									<strong>{ __( 'Input Tokens:', 'ai-content-forge' ) }</strong>{ ' ' }
+									<strong>{ __( 'Input Tokens:', 'ai-genie' ) }</strong>{ ' ' }
 									{ formatTokenValue( runUsage.input_tokens ) }
 								</div>
 								{ hasThinkingTokens( runUsage ) && (
 									<div>
-										<strong>{ __( 'Thinking Tokens:', 'ai-content-forge' ) }</strong>{ ' ' }
+										<strong>{ __( 'Thinking Tokens:', 'ai-genie' ) }</strong>{ ' ' }
 										{ formatTokenValue( runUsage.thinking_tokens ) }
 									</div>
 								) }
 								<div>
-									<strong>{ __( 'Output Tokens:', 'ai-content-forge' ) }</strong>{ ' ' }
+									<strong>{ __( 'Output Tokens:', 'ai-genie' ) }</strong>{ ' ' }
 									{ formatTokenValue( runUsage.output_tokens ) }
 								</div>
 								<div>
-									<strong>{ __( 'Total Tokens:', 'ai-content-forge' ) }</strong>{ ' ' }
+									<strong>{ __( 'Total Tokens:', 'ai-genie' ) }</strong>{ ' ' }
 									{ formatTokenValue( runUsage.total_tokens ) }
 								</div>
 								{ hasCost( runUsage ) ? (
 									<div>
-										<strong>{ __( 'Cost (USD):', 'ai-content-forge' ) }</strong>{ ' ' }
+										<strong>{ __( 'Cost (USD):', 'ai-genie' ) }</strong>{ ' ' }
 										{ formatUsd( runUsage.cost_usd ) }
 									</div>
 								) : runUsage.provider === 'ollama' ? (
 									<div style={ { opacity: 0.65, fontStyle: 'italic' } }>
-										{ __( 'Local model — no API cost.', 'ai-content-forge' ) }
+										{ __( 'Local model — no API cost.', 'ai-genie' ) }
 									</div>
 								) : null }
 							</>
 						) : (
 							<div style={ { opacity: 0.75 } }>
-								{ __( 'Usage appears here after a generation run completes.', 'ai-content-forge' ) }
+								{ __( 'Usage appears here after a generation run completes.', 'ai-genie' ) }
 							</div>
 						) }
 					</div>
@@ -1087,7 +1087,7 @@ function AcfSidebar() {
 						<PanelRow>
 							<div style={ { width: '100%', borderTop: '1px solid #e0e0e0', marginTop: '8px', paddingTop: '10px' } }>
 								<strong style={ { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#757575' } }>
-									{ __( 'Session totals', 'ai-content-forge' ) }
+									{ __( 'Session totals', 'ai-genie' ) }
 								</strong>
 							</div>
 						</PanelRow>
@@ -1097,22 +1097,22 @@ function AcfSidebar() {
 									<div style={ { display: 'inline-flex', alignItems: 'center', gap: '6px' } }>
 										<ProviderIcon provider={ row.provider } size={ 16 } />
 										<strong>{ PROVIDER_LABELS[ row.provider ] || row.provider }</strong>{ row.model ? ` (${ row.model })` : '' }
-										{ ' · ' }{ row.runs } { row.runs === 1 ? __( 'run', 'ai-content-forge' ) : __( 'runs', 'ai-content-forge' ) }
+										{ ' · ' }{ row.runs } { row.runs === 1 ? __( 'run', 'ai-genie' ) : __( 'runs', 'ai-genie' ) }
 									</div>
 									<div>
-										{ __( 'In:', 'ai-content-forge' ) } { formatTokenValue( row.input_tokens ) }
+										{ __( 'In:', 'ai-genie' ) } { formatTokenValue( row.input_tokens ) }
 										{ hasThinkingTokens( row ) && (
-											<>{ ' · ' }{ __( 'Think:', 'ai-content-forge' ) } { formatTokenValue( row.thinking_tokens ) }</>
+											<>{ ' · ' }{ __( 'Think:', 'ai-genie' ) } { formatTokenValue( row.thinking_tokens ) }</>
 										) }
-										{ ' · ' }{ __( 'Out:', 'ai-content-forge' ) } { formatTokenValue( row.output_tokens ) }
+										{ ' · ' }{ __( 'Out:', 'ai-genie' ) } { formatTokenValue( row.output_tokens ) }
 									</div>
 									{ hasCost( row ) ? (
 										<div>
-											{ __( 'Cost:', 'ai-content-forge' ) } { formatUsd( row.cost_usd ) }
+											{ __( 'Cost:', 'ai-genie' ) } { formatUsd( row.cost_usd ) }
 										</div>
 									) : row.provider === 'ollama' ? (
 										<div style={ { opacity: 0.65, fontStyle: 'italic' } }>
-											{ __( 'Local model — no API cost.', 'ai-content-forge' ) }
+											{ __( 'Local model — no API cost.', 'ai-genie' ) }
 										</div>
 									) : null }
 								</div>
@@ -1125,7 +1125,7 @@ function AcfSidebar() {
 			{ /* ── Result ─────────────────────────────── */ }
 			{ result && (
 				<PanelBody
-					title={ __( 'Result', 'ai-content-forge' ) }
+					title={ __( 'Result', 'ai-genie' ) }
 					initialOpen={ true }
 				>
 					<PanelRow>
@@ -1154,15 +1154,15 @@ function AcfSidebar() {
 								style={ { flex: 1 } }
 							>
 								{ copied
-									? __( '✓ Copied!', 'ai-content-forge' )
-									: __( 'Copy', 'ai-content-forge' ) }
+									? __( '✓ Copied!', 'ai-genie' )
+									: __( 'Copy', 'ai-genie' ) }
 							</Button>
 							<Button
 								variant="primary"
 								onClick={ () => applyResult( type, result ) }
 								style={ { flex: 1 } }
 							>
-								{ __( 'Apply to Post', 'ai-content-forge' ) }
+								{ __( 'Apply to Post', 'ai-genie' ) }
 							</Button>
 						</div>
 					</PanelRow>
@@ -1175,18 +1175,18 @@ function AcfSidebar() {
 // ── Register sidebar ──────────────────────────────────────────────────────────
 const CreateIcon = () => <PluginIconImage />;
 
-registerPlugin( 'ai-content-forge', {
+registerPlugin( 'ai-genie', {
 	render: () => (
 		<>
 			<PluginSidebarMoreMenuItem
-				target="ai-content-forge-sidebar"
+				target="ai-genie-sidebar"
 				icon={ <CreateIcon /> }
 			>
-				{ __( 'AI Content Forge', 'ai-content-forge' ) }
+				{ __( 'AI Content Forge', 'ai-genie' ) }
 			</PluginSidebarMoreMenuItem>
 			<PluginSidebar
-				name="ai-content-forge-sidebar"
-				title={ __( 'AI Content Forge', 'ai-content-forge' ) }
+				name="ai-genie-sidebar"
+				title={ __( 'AI Content Forge', 'ai-genie' ) }
 				icon={ <CreateIcon /> }
 			>
 				<AcfSidebar />
