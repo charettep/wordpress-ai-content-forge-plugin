@@ -7,6 +7,20 @@ class ACF_Admin {
         return ACF_PLUGIN_URL . 'images/' . ltrim( $filename, '/' );
     }
 
+    private static function menu_icon_data_uri(): string {
+        $svg = <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+  <rect x="1.5" y="1.5" width="17" height="17" rx="4" fill="#0F5C95"/>
+  <path d="M6 5.5h5.6l2.4 2.4v6.6a1 1 0 0 1-1 1H6.9a.9.9 0 0 1-.9-.9V6.4a.9.9 0 0 1 .9-.9Z" fill="#fff"/>
+  <path d="M11.6 5.5v1.9c0 .5.4.9.9.9h1.5" stroke="#0F5C95" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7.8 10.2h4.6M7.8 12.3h4.1" stroke="#0F5C95" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="m13.9 4.2.5 1 .9.2-.7.7.1 1-.8-.4-.9.4.2-1-.7-.7.9-.2.5-1Z" fill="#F7B500"/>
+</svg>
+SVG;
+
+        return 'data:image/svg+xml;base64,' . base64_encode( $svg );
+    }
+
     private static function provider_icon_filename( string $slug ): string {
         return match ( $slug ) {
             'claude' => 'claude-ai-icon.png',
@@ -37,7 +51,7 @@ class ACF_Admin {
             'manage_options',
             'ai-content-forge',
             [ self::class, 'render_page' ],
-            self::image_url( 'plugin-icon.png' ),
+            self::menu_icon_data_uri(),
             66
         );
     }

@@ -6,7 +6,7 @@ AI Content Forge is a WordPress plugin for generating editorial content with Ant
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, and model discovery
 
-The current packaged release is `v2.11.1`.
+The current packaged release is `v2.11.2`.
 
 ## Features
 
@@ -29,6 +29,12 @@ The current packaged release is `v2.11.1`.
 - Advanced per-run overrides for model, prompt template, max output tokens, max thinking tokens, and temperature
 
 ## Changelog
+
+### v2.11.2 — Admin Menu Icon Fix
+
+- stops passing the large branded PNG directly into WordPress admin menu registration
+- uses a compact menu-safe SVG icon for the left admin navigation entry so the menu icon renders at the correct size and position
+- keeps the updated bundled `plugin-icon.png` for page and editor branding where image sizing is explicitly controlled
 
 ### v2.11.1 — Stricter WordPress Formatting Templates
 
@@ -178,7 +184,7 @@ The current packaged release is `v2.11.1`.
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-content-forge-v2.11.1.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-content-forge-v2.11.2.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
