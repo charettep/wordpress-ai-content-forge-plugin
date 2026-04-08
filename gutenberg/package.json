@@ -16,6 +16,7 @@
     "@wordpress/edit-post": "*",
     "@wordpress/element": "*",
     "@wordpress/i18n": "*",
+    "@wordpress/icons": "*",
     "@wordpress/plugins": "*"
   },
   "devDependencies": {

@@ -8,6 +8,7 @@ import { registerPlugin } from '@wordpress/plugins';
 import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/edit-post';
 import {
 	Button,
+	Icon,
 	SelectControl,
 	TextControl,
 	TextareaControl,
@@ -18,6 +19,7 @@ import {
 	PanelBody,
 	PanelRow,
 } from '@wordpress/components';
+import { create } from '@wordpress/icons';
 import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
@@ -55,9 +57,9 @@ const LANG_OPTIONS = [
 
 const PROVIDER_OPTIONS = [
 	{ value: '', label: `Default (${ settings.default_provider })` },
-	{ value: 'claude', label: '🟠 Anthropic Claude' },
-	{ value: 'openai', label: '🟢 OpenAI' },
-	{ value: 'ollama', label: '🔵 Ollama' },
+	{ value: 'claude', label: 'Anthropic Claude' },
+	{ value: 'openai', label: 'OpenAI' },
+	{ value: 'ollama', label: 'Ollama' },
 ];
 
 const TYPE_OPTIONS = Object.entries( typeLabels ).map(
@@ -598,8 +600,33 @@ function AcfSidebar() {
 		...providerModels.map( ( m ) => ( { value: m.id, label: m.label || m.id } ) ),
 	];
 
+	const activeModel = modelOverride || getDefaultModelLabel( activeProvider );
+
 	return (
 		<Panel>
+			{ /* ── Status chip ─────────────────────────── */ }
+			<div style={ {
+				display: 'flex',
+				alignItems: 'center',
+				gap: '6px',
+				padding: '8px 16px',
+				borderBottom: '1px solid #e0e0e0',
+				fontSize: '11px',
+				color: '#757575',
+			} }>
+				<span style={ {
+					display: 'inline-block',
+					width: '7px',
+					height: '7px',
+					borderRadius: '50%',
+					background: '#2e7d32',
+					flexShrink: 0,
+				} } />
+				<span>
+					{ activeProvider } { activeModel !== 'auto' ? `· ${ activeModel }` : '' }
+				</span>
+			</div>
+
 			{ /* ── Generate ───────────────────────────── */ }
 			<PanelBody
 				title={ __( 'Generate', 'ai-content-forge' ) }
@@ -876,46 +903,43 @@ function AcfSidebar() {
 						) }
 					</div>
 				</PanelRow>
-			</PanelBody>
 
-			<PanelBody
-				title={ __( 'Post Usage Totals', 'ai-content-forge' ) }
-				initialOpen={ false }
-			>
-				{ currentPostUsageRows.length > 0 ? (
-					currentPostUsageRows.map( ( row ) => (
-						<PanelRow key={ `${ row.postId }-${ row.provider }` }>
-							<div style={ { width: '100%', fontSize: '12px', lineHeight: 1.5 } }>
-								<div>
-									<strong>{ row.provider }</strong>{ row.model ? ` (${ row.model })` : '' } · { row.runs } run(s)
-								</div>
-								<div>
-									{ __( 'Input:', 'ai-content-forge' ) } { formatTokenValue( row.input_tokens ) }
-									{ hasThinkingTokens( row ) && (
-										<>{ ' · ' }{ __( 'Thinking:', 'ai-content-forge' ) } { formatTokenValue( row.thinking_tokens ) }</>
-									) }
-								</div>
-								<div>
-									{ __( 'Output:', 'ai-content-forge' ) } { formatTokenValue( row.output_tokens ) } · { __( 'Total:', 'ai-content-forge' ) } { formatTokenValue( row.total_tokens ) }
-								</div>
-								{ hasCost( row ) ? (
-									<div>
-										{ __( 'Cost (USD):', 'ai-content-forge' ) } { formatUsd( row.cost_usd ) }
-									</div>
-								) : row.provider === 'ollama' ? (
-									<div style={ { opacity: 0.65, fontStyle: 'italic' } }>
-										{ __( 'Local model — no API cost.', 'ai-content-forge' ) }
-									</div>
-								) : null }
+				{ currentPostUsageRows.length > 0 && (
+					<>
+						<PanelRow>
+							<div style={ { width: '100%', borderTop: '1px solid #e0e0e0', marginTop: '8px', paddingTop: '10px' } }>
+								<strong style={ { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#757575' } }>
+									{ __( 'Session totals', 'ai-content-forge' ) }
+								</strong>
 							</div>
 						</PanelRow>
-					) )
-				) : (
-					<PanelRow>
-						<div style={ { width: '100%', fontSize: '12px', lineHeight: 1.5, opacity: 0.75 } }>
-							{ __( 'Totals appear here after at least one generation run for the current post.', 'ai-content-forge' ) }
-						</div>
-					</PanelRow>
+						{ currentPostUsageRows.map( ( row ) => (
+							<PanelRow key={ `${ row.postId }-${ row.provider }` }>
+								<div style={ { width: '100%', fontSize: '12px', lineHeight: 1.5 } }>
+									<div>
+										<strong>{ row.provider }</strong>{ row.model ? ` (${ row.model })` : '' }
+										{ ' · ' }{ row.runs } { row.runs === 1 ? __( 'run', 'ai-content-forge' ) : __( 'runs', 'ai-content-forge' ) }
+									</div>
+									<div>
+										{ __( 'In:', 'ai-content-forge' ) } { formatTokenValue( row.input_tokens ) }
+										{ hasThinkingTokens( row ) && (
+											<>{ ' · ' }{ __( 'Think:', 'ai-content-forge' ) } { formatTokenValue( row.thinking_tokens ) }</>
+										) }
+										{ ' · ' }{ __( 'Out:', 'ai-content-forge' ) } { formatTokenValue( row.output_tokens ) }
+									</div>
+									{ hasCost( row ) ? (
+										<div>
+											{ __( 'Cost:', 'ai-content-forge' ) } { formatUsd( row.cost_usd ) }
+										</div>
+									) : row.provider === 'ollama' ? (
+										<div style={ { opacity: 0.65, fontStyle: 'italic' } }>
+											{ __( 'Local model — no API cost.', 'ai-content-forge' ) }
+										</div>
+									) : null }
+								</div>
+							</PanelRow>
+						) ) }
+					</>
 				) }
 			</PanelBody>
 
@@ -970,16 +994,21 @@ function AcfSidebar() {
 }
 
 // ── Register sidebar ──────────────────────────────────────────────────────────
+const CreateIcon = () => <Icon icon={ create } />;
+
 registerPlugin( 'ai-content-forge', {
 	render: () => (
 		<>
-			<PluginSidebarMoreMenuItem target="ai-content-forge-sidebar">
+			<PluginSidebarMoreMenuItem
+				target="ai-content-forge-sidebar"
+				icon={ <CreateIcon /> }
+			>
 				{ __( 'AI Content Forge', 'ai-content-forge' ) }
 			</PluginSidebarMoreMenuItem>
 			<PluginSidebar
 				name="ai-content-forge-sidebar"
 				title={ __( 'AI Content Forge', 'ai-content-forge' ) }
-				icon="superhero-alt"
+				icon={ <CreateIcon /> }
 			>
 				<AcfSidebar />
 			</PluginSidebar>
