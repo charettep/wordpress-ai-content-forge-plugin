@@ -3,7 +3,7 @@
  * Plugin Name: AI Genie
  * Plugin URI:  https://github.com/charettep/wordpress-ai-genie-plugin
  * Description: AI-powered content generation (posts, SEO, descriptions) via Claude, OpenAI, or Ollama — your AI genie for WordPress content.
- * Version:     3.4.0
+ * Version:     3.4.1
  * Update URI:  https://github.com/charettep/wordpress-ai-genie-plugin
  * Author:      charettep
  * License:     GPL-2.0+
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AIG_VERSION',    '3.4.0' );
+define( 'AIG_VERSION',    '3.4.1' );
 define( 'AIG_PLUGIN_FILE', __FILE__ );
 define( 'AIG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AIG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -39,6 +39,13 @@ require_once AIG_PLUGIN_DIR . 'admin/class-aig-gutenberg.php';
 
 register_activation_hook( __FILE__, [ 'AIG_Deep_Research_Install', 'activate' ] );
 register_deactivation_hook( __FILE__, [ 'AIG_Deep_Research_Install', 'deactivate' ] );
+
+// Load translations on init — must NOT be called on plugins_loaded or earlier
+// because WordPress 6.7+ triggers a notice when JIT translation loading fires
+// before the init action, which causes headers-already-sent warnings.
+add_action( 'init', function () {
+    load_plugin_textdomain( 'ai-genie', false, dirname( plugin_basename( AIG_PLUGIN_FILE ) ) . '/languages' );
+} );
 
 function aig_init() {
     AIG_Settings::init();

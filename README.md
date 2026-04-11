@@ -17,7 +17,7 @@ AI Genie is a WordPress plugin for generating editorial content with Anthropic C
 - REST endpoints for generation, provider status, model discovery, and Deep Research run management
 - native WordPress update checks and auto-updates backed by GitHub Releases
 
-The current packaged release is `v3.4.0`.
+The current packaged release is `v3.4.1`.
 
 ## Features
 
@@ -102,7 +102,7 @@ Live usage notes:
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-genie-v3.4.0.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-genie-v3.4.1.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -755,6 +755,13 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v3.4.1`
+
+- added "Check for updates" action link on the plugins list page — clears the release cache and forces a fresh GitHub check immediately
+- enriched the plugin details modal (View details) with a full description, feature list, installation instructions, and a multi-version changelog sourced from GitHub Releases
+- fixed Markdown rendering in the changelog: release notes now correctly parse headings, bullet lists, bold, and inline code instead of displaying raw escaped text
+- fixed `_load_textdomain_just_in_time` notice on WordPress 6.7+: `load_plugin_textdomain` is now called on the `init` action instead of `plugins_loaded`, eliminating the headers-already-sent cascade on plugin activation
 
 ### `v3.4.0`
 
