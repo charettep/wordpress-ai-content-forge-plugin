@@ -6,6 +6,13 @@ class AIG_Deep_Research_Service {
     private const RESPONSES_API_URL = 'https://api.openai.com/v1/responses';
     private const VECTOR_STORES_API_URL = 'https://api.openai.com/v1/vector_stores';
 
+    private const TOOL_ITEM_TYPES = [
+        'web_search_call',
+        'code_interpreter_call',
+        'mcp_tool_call',
+        'file_search_call',
+    ];
+
     public static function create_run( array $args ): array {
         $title          = sanitize_text_field( (string) ( $args['title'] ?? '' ) );
         $prompt         = trim( (string) ( $args['prompt'] ?? '' ) );
@@ -50,11 +57,15 @@ class AIG_Deep_Research_Service {
             throw new RuntimeException( 'Deep Research run was created but could not be reloaded.' );
         }
 
-        return $run;
+        return self::hydrate_run( $run );
     }
 
-    public static function list_runs(): array {
-        return AIG_Deep_Research_Store::list_runs( 50 );
+    public static function list_runs( bool $refresh_active = false ): array {
+        if ( $refresh_active ) {
+            self::poll_active_runs();
+        }
+
+        return self::hydrate_runs( AIG_Deep_Research_Store::list_runs( 50 ) );
     }
 
     public static function list_sources(): array {
@@ -279,7 +290,7 @@ class AIG_Deep_Research_Service {
             throw new RuntimeException( 'Deep Research run could not be loaded.' );
         }
 
-        return $run;
+        return self::hydrate_run( $run );
     }
 
     public static function cancel_run( int $run_id ): array {
@@ -698,12 +709,188 @@ class AIG_Deep_Research_Service {
             'last_error'         => isset( $response['error']['message'] ) ? (string) $response['error']['message'] : '',
         ];
 
-        if ( in_array( $status, [ 'completed', 'failed', 'cancelled', 'incomplete' ], true ) ) {
+        if ( in_array( $status, [ 'completed', 'failed', 'cancelled', 'canceled', 'incomplete' ], true ) ) {
             $update['completed_at'] = current_time( 'mysql', true );
         }
 
         AIG_Deep_Research_Store::update_run( $run_id, $update );
         AIG_Deep_Research_Store::replace_run_items( $run_id, $output );
+    }
+
+    private static function hydrate_runs( array $runs ): array {
+        return array_map( [ self::class, 'hydrate_run' ], $runs );
+    }
+
+    private static function hydrate_run( array $run ): array {
+        $tools_metrics = self::build_tool_metrics( is_array( $run['items'] ?? null ) ? $run['items'] : [] );
+        $usage_metrics = self::build_usage_metrics( $run );
+
+        $run['can_stop'] = ! empty( $run['response_id'] ) && in_array( (string) ( $run['response_status'] ?? '' ), [ 'queued', 'in_progress' ], true );
+        $run['metrics']  = [
+            'usage'    => $usage_metrics,
+            'tools'    => $tools_metrics,
+            'progress' => self::build_progress_metrics( $run, $tools_metrics ),
+        ];
+
+        return $run;
+    }
+
+    private static function build_usage_metrics( array $run ): array {
+        $response = is_array( $run['response_payload'] ?? null ) ? $run['response_payload'] : [];
+        $usage    = is_array( $response['usage'] ?? null ) ? $response['usage'] : [];
+
+        $input_tokens      = isset( $usage['input_tokens'] ) ? max( 0, (int) $usage['input_tokens'] ) : null;
+        $output_tokens     = isset( $usage['output_tokens'] ) ? max( 0, (int) $usage['output_tokens'] ) : null;
+        $reasoning_tokens  = null;
+        $output_details    = is_array( $usage['output_tokens_details'] ?? null ) ? $usage['output_tokens_details'] : [];
+        $input_details     = is_array( $usage['input_tokens_details'] ?? null ) ? $usage['input_tokens_details'] : [];
+
+        if ( isset( $output_details['reasoning_tokens'] ) ) {
+            $reasoning_tokens = max( 0, (int) $output_details['reasoning_tokens'] );
+        } elseif ( isset( $input_details['cached_tokens'] ) ) {
+            $reasoning_tokens = null;
+        }
+
+        $total_tokens = isset( $usage['total_tokens'] ) ? max( 0, (int) $usage['total_tokens'] ) : null;
+        if ( null === $total_tokens && null !== $input_tokens && null !== $output_tokens ) {
+            $total_tokens = $input_tokens + $output_tokens;
+        }
+
+        if ( null !== $input_tokens || null !== $output_tokens || null !== $total_tokens ) {
+            return [
+                'provider'         => 'openai',
+                'model'            => (string) ( $run['model'] ?? '' ),
+                'input_tokens'     => $input_tokens,
+                'reasoning_tokens' => $reasoning_tokens,
+                'output_tokens'    => $output_tokens,
+                'total_tokens'     => $total_tokens,
+                'estimated'        => false,
+                'source'           => 'openai',
+            ];
+        }
+
+        $estimate = AIG_Token_Usage_Estimator::begin_estimate(
+            'openai',
+            (string) ( $run['model'] ?? '' ),
+            (string) ( $run['prompt'] ?? '' )
+        );
+
+        if ( ! empty( $estimate ) ) {
+            $estimate = AIG_Token_Usage_Estimator::update_estimate(
+                $estimate,
+                (string) ( $run['report_message'] ?? '' )
+            );
+        }
+
+        return [
+            'provider'         => 'openai',
+            'model'            => (string) ( $run['model'] ?? '' ),
+            'input_tokens'     => isset( $estimate['input_tokens'] ) ? (int) $estimate['input_tokens'] : null,
+            'reasoning_tokens' => null,
+            'output_tokens'    => isset( $estimate['output_tokens'] ) ? (int) $estimate['output_tokens'] : null,
+            'total_tokens'     => isset( $estimate['total_tokens'] ) ? (int) $estimate['total_tokens'] : null,
+            'estimated'        => true,
+            'source'           => ! empty( $estimate['estimate_source'] ) ? (string) $estimate['estimate_source'] : 'tiktoken',
+        ];
+    }
+
+    private static function build_tool_metrics( array $items ): array {
+        $details = [];
+
+        foreach ( self::TOOL_ITEM_TYPES as $type ) {
+            $details[ $type ] = [
+                'count'            => 0,
+                'input_tokens'     => null,
+                'output_tokens'    => null,
+                'reasoning_tokens' => null,
+                'total_tokens'     => null,
+                'has_usage'        => false,
+            ];
+        }
+
+        foreach ( $items as $item ) {
+            if ( ! is_array( $item ) ) {
+                continue;
+            }
+
+            $type = sanitize_key( (string) ( $item['type'] ?? '' ) );
+            if ( ! isset( $details[ $type ] ) ) {
+                continue;
+            }
+
+            $details[ $type ]['count']++;
+
+            $usage = is_array( $item['usage'] ?? null ) ? $item['usage'] : [];
+            if ( empty( $usage ) ) {
+                continue;
+            }
+
+            $details[ $type ]['input_tokens'] = self::sum_nullable_int( $details[ $type ]['input_tokens'], $usage['input_tokens'] ?? null );
+            $details[ $type ]['output_tokens'] = self::sum_nullable_int( $details[ $type ]['output_tokens'], $usage['output_tokens'] ?? null );
+            $details[ $type ]['total_tokens'] = self::sum_nullable_int( $details[ $type ]['total_tokens'], $usage['total_tokens'] ?? null );
+
+            $output_details = is_array( $usage['output_tokens_details'] ?? null ) ? $usage['output_tokens_details'] : [];
+            $details[ $type ]['reasoning_tokens'] = self::sum_nullable_int( $details[ $type ]['reasoning_tokens'], $output_details['reasoning_tokens'] ?? null );
+            $details[ $type ]['has_usage'] = true;
+        }
+
+        return [
+            'total_calls' => array_sum( array_map( static fn( array $detail ): int => (int) $detail['count'], $details ) ),
+            'details'     => $details,
+        ];
+    }
+
+    private static function build_progress_metrics( array $run, array $tools_metrics ): array {
+        $response_status = (string) ( $run['response_status'] ?? '' );
+        $run_status      = (string) ( $run['status'] ?? '' );
+        $terminal        = in_array( $response_status, [ 'completed', 'failed', 'cancelled', 'canceled', 'incomplete' ], true )
+            || in_array( $run_status, [ 'completed', 'failed', 'cancelled' ], true );
+
+        if ( $terminal ) {
+            return [
+                'percent'   => 100,
+                'estimated' => false,
+                'label'     => 'completed' === $run_status ? 'Complete' : ucfirst( $run_status ?: $response_status ),
+            ];
+        }
+
+        if ( 'queued' === $response_status || 'queued' === $run_status ) {
+            return [
+                'percent'   => 5,
+                'estimated' => true,
+                'label'     => 'Queued',
+            ];
+        }
+
+        if ( 'in_progress' === $response_status || 'running' === $run_status ) {
+            $max_tool_calls   = max( 1, absint( $run['max_tool_calls'] ?? 0 ) );
+            $observed_calls   = absint( $tools_metrics['total_calls'] ?? 0 );
+            $tool_component   = min( 70, (int) round( ( $observed_calls / $max_tool_calls ) * 70 ) );
+            $report_component = '' !== trim( (string) ( $run['report_message'] ?? '' ) ) ? 10 : 0;
+            $percent          = min( 95, max( 15, 15 + $tool_component + $report_component ) );
+
+            return [
+                'percent'   => $percent,
+                'estimated' => true,
+                'label'     => 'Running',
+            ];
+        }
+
+        return [
+            'percent'   => 0,
+            'estimated' => true,
+            'label'     => ucfirst( $run_status ?: 'Pending' ),
+        ];
+    }
+
+    private static function sum_nullable_int( $current, $next ): ?int {
+        $current = null === $current ? null : (int) $current;
+
+        if ( null === $next || '' === $next ) {
+            return $current;
+        }
+
+        return ( null === $current ? 0 : $current ) + max( 0, (int) $next );
     }
 
     private static function verify_webhook_payload( string $payload, array $headers, string $secret ): void {
@@ -752,6 +939,7 @@ class AIG_Deep_Research_Service {
             'in_progress' => 'running',
             'completed'   => 'completed',
             'cancelled'   => 'cancelled',
+            'canceled'    => 'cancelled',
             'failed',
             'incomplete'  => 'failed',
             default       => 'draft',

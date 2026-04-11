@@ -15,6 +15,11 @@ class AIG_Rest_API {
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ self::class, 'handle_deep_research_runs_list' ],
                 'permission_callback' => [ self::class, 'check_manage_options_permission' ],
+                'args'                => [
+                    'refresh' => [
+                        'default' => false,
+                    ],
+                ],
             ],
             [
                 'methods'             => WP_REST_Server::CREATABLE,
@@ -263,11 +268,11 @@ class AIG_Rest_API {
         return current_user_can( 'manage_options' );
     }
 
-    public static function handle_deep_research_runs_list(): WP_REST_Response {
+    public static function handle_deep_research_runs_list( WP_REST_Request $request ): WP_REST_Response {
         return new WP_REST_Response(
             [
                 'success' => true,
-                'runs'    => AIG_Deep_Research_Service::list_runs(),
+                'runs'    => AIG_Deep_Research_Service::list_runs( rest_sanitize_boolean( $request->get_param( 'refresh' ) ) ),
             ],
             200
         );

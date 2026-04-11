@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let savedSources = [];
     let vectorStores = [];
+    let runsPollTimer = null;
 
     async function request(path, options = {}) {
         const response = await fetch(restUrl + path, {
@@ -76,6 +77,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function checkedValues(root, name) {
         return Array.from(root.querySelectorAll(`input[name="${name}"]:checked`)).map((input) => input.value);
+    }
+
+    function formatNumber(value) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number.toLocaleString() : (i18n.na || 'n/a');
+    }
+
+    function formatNullableNumber(value) {
+        if (value === null || value === undefined || value === '') {
+            return i18n.na || 'n/a';
+        }
+
+        return formatNumber(value);
+    }
+
+    function getToolLabel(type) {
+        const labels = {
+            web_search_call: 'Web Search',
+            code_interpreter_call: 'Code Interpreter',
+            mcp_tool_call: 'MCP',
+            file_search_call: 'File Search',
+        };
+
+        return labels[type] || type;
+    }
+
+    function stopRunsPolling() {
+        if (runsPollTimer) {
+            window.clearTimeout(runsPollTimer);
+            runsPollTimer = null;
+        }
+    }
+
+    function scheduleRunsPolling(hasActiveRuns) {
+        stopRunsPolling();
+
+        if (!hasActiveRuns) {
+            return;
+        }
+
+        runsPollTimer = window.setTimeout(() => {
+            loadRuns(true);
+        }, 4000);
     }
 
     function selectMainTab(tabName) {
@@ -335,11 +379,97 @@ document.addEventListener('DOMContentLoaded', () => {
         renderVectorStoreOptions();
     }
 
+    function renderUsagePanel(run) {
+        const usage = run.metrics && run.metrics.usage ? run.metrics.usage : {};
+        const estimated = !!usage.estimated;
+        const reasoning = usage.reasoning_tokens;
+
+        return `
+            <div class="aig-dr-usage-card">
+                <div class="aig-dr-usage-head">
+                    <strong>${escapeHtml(i18n.tokenUsageTitle || 'Token Usage')}</strong>
+                    ${estimated ? `<span class="aig-dr-usage-badge">${escapeHtml(i18n.liveEstimate || 'Live estimate via tiktoken')}</span>` : ''}
+                </div>
+                <div class="aig-dr-usage-grid">
+                    <div><strong>${escapeHtml(i18n.provider || 'Provider')}:</strong> OpenAI</div>
+                    <div><strong>${escapeHtml(i18n.model || 'Model')}:</strong> ${escapeHtml(usage.model || run.model || '')}</div>
+                    <div><strong>${escapeHtml(i18n.input || 'In')}:</strong> ${escapeHtml(formatNullableNumber(usage.input_tokens))}</div>
+                    <div><strong>${escapeHtml(i18n.reasoning || 'Think')}:</strong> ${escapeHtml(formatNullableNumber(reasoning))}</div>
+                    <div><strong>${escapeHtml(i18n.output || 'Out')}:</strong> ${escapeHtml(formatNullableNumber(usage.output_tokens))}</div>
+                    <div><strong>${escapeHtml(i18n.total || 'Total')}:</strong> ${escapeHtml(formatNullableNumber(usage.total_tokens))}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderToolsPanel(run) {
+        const toolMetrics = run.metrics && run.metrics.tools ? run.metrics.tools : {};
+        const details = toolMetrics.details || {};
+        const totalCalls = Number(toolMetrics.total_calls || 0);
+        const detailRows = ['web_search_call', 'code_interpreter_call', 'mcp_tool_call', 'file_search_call'].map((type) => {
+            const detail = details[type] || {};
+            return `
+                <tr>
+                    <th scope="row">${escapeHtml(getToolLabel(type))}</th>
+                    <td>${escapeHtml(formatNumber(detail.count || 0))}</td>
+                    <td>${escapeHtml(formatNullableNumber(detail.total_tokens))}</td>
+                    <td>${detail.has_usage ? escapeHtml(formatNullableNumber(detail.input_tokens)) : escapeHtml(i18n.na || 'n/a')}</td>
+                    <td>${detail.has_usage ? escapeHtml(formatNullableNumber(detail.output_tokens)) : escapeHtml(i18n.na || 'n/a')}</td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <details class="aig-dr-tools-panel">
+                <summary>
+                    <strong>${escapeHtml(i18n.toolUsageTitle || 'Tools')}</strong>
+                    <span>${escapeHtml(formatNumber(totalCalls))} total call${totalCalls === 1 ? '' : 's'}</span>
+                </summary>
+                <div class="aig-dr-tools-table-wrap">
+                    <table class="aig-dr-tools-table">
+                        <thead>
+                            <tr>
+                                <th>Tool</th>
+                                <th>Calls</th>
+                                <th>Total Tokens</th>
+                                <th>Input</th>
+                                <th>Output</th>
+                            </tr>
+                        </thead>
+                        <tbody>${detailRows}</tbody>
+                    </table>
+                </div>
+            </details>
+        `;
+    }
+
+    function renderProgressPanel(run) {
+        const progress = run.metrics && run.metrics.progress ? run.metrics.progress : {};
+        const percent = Math.max(0, Math.min(100, Number(progress.percent || 0)));
+        const label = progress.label || run.status || '';
+
+        return `
+            <div class="aig-dr-progress-card">
+                <div class="aig-dr-progress-head">
+                    <strong>${escapeHtml(i18n.progressTitle || 'Progress')}</strong>
+                    <span>${escapeHtml(String(percent))}%${progress.estimated ? ` · ${escapeHtml(i18n.estimated || 'Estimated')}` : ''}</span>
+                </div>
+                <div class="aig-dr-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${escapeHtml(String(percent))}">
+                    <span style="width:${escapeHtml(String(percent))}%"></span>
+                </div>
+                <p class="aig-dr-progress-meta">${escapeHtml(label)}</p>
+            </div>
+        `;
+    }
+
     function renderRuns(runs) {
         if (!Array.isArray(runs) || runs.length === 0) {
-            runsRoot.innerHTML = '<p class="description">No Deep Research runs yet.</p>';
+            runsRoot.innerHTML = `<p class="description">${escapeHtml(i18n.noRuns || 'No Deep Research runs yet.')}</p>`;
+            scheduleRunsPolling(false);
             return;
         }
+
+        const hasActiveRuns = runs.some((run) => ['queued', 'running'].includes(run.status) || ['queued', 'in_progress'].includes(run.response_status));
 
         runsRoot.innerHTML = runs.map((run) => {
             const annotations = Array.isArray(run.report_annotations) ? run.report_annotations : [];
@@ -358,31 +488,39 @@ document.addEventListener('DOMContentLoaded', () => {
                             </p>
                         </div>
                         <div class="aig-dr-run-actions">
-                            <button type="button" class="button aig-dr-run-refresh">Refresh</button>
-                            <button type="button" class="button aig-dr-run-cancel" ${['queued', 'running'].includes(run.status) ? '' : 'disabled'}>Cancel</button>
-                            <button type="button" class="button aig-dr-run-draft" data-post-type="post" ${run.report_message ? '' : 'disabled'}>Create Post Draft</button>
-                            <button type="button" class="button aig-dr-run-draft" data-post-type="page" ${run.report_message ? '' : 'disabled'}>Create Page Draft</button>
+                            <button type="button" class="button aig-dr-run-refresh">${escapeHtml(i18n.refresh || 'Refresh')}</button>
+                            <button type="button" class="button aig-dr-run-stop" ${run.can_stop ? '' : 'disabled'}>${escapeHtml(i18n.stop || 'Stop')}</button>
+                            <button type="button" class="button aig-dr-run-draft" data-post-type="post" ${run.report_message ? '' : 'disabled'}>${escapeHtml(i18n.createPostDraft || 'Create Post Draft')}</button>
+                            <button type="button" class="button aig-dr-run-draft" data-post-type="page" ${run.report_message ? '' : 'disabled'}>${escapeHtml(i18n.createPageDraft || 'Create Page Draft')}</button>
                         </div>
+                    </div>
+                    ${renderProgressPanel(run)}
+                    <div class="aig-dr-run-stats">
+                        ${renderUsagePanel(run)}
+                        ${renderToolsPanel(run)}
                     </div>
                     <p><strong>Prompt:</strong> ${escapeHtml(run.prompt || '')}</p>
                     <p><strong>Tool trace:</strong> ${escapeHtml(itemSummary || 'None yet')}</p>
                     <p><strong>Citations:</strong> ${annotations.length}</p>
                     ${draftLinks}
-                    <div class="aig-dr-report">${escapeHtml(run.report_message || 'No final report yet.')}</div>
+                    <div class="aig-dr-report">${escapeHtml(run.report_message || (i18n.noReport || 'No final report yet.'))}</div>
                     ${run.last_error ? `<p class="aig-dr-error"><strong>Error:</strong> ${escapeHtml(run.last_error)}</p>` : ''}
                 </article>
             `;
         }).join('');
+
+        scheduleRunsPolling(hasActiveRuns);
     }
 
-    async function loadRuns() {
+    async function loadRuns(refreshActive = false) {
         refreshButton.disabled = true;
 
         try {
-            const data = await request('/deep-research/runs');
+            const data = await request(`/deep-research/runs${refreshActive ? '?refresh=1' : ''}`);
             renderRuns(data.runs || []);
         } catch (error) {
             runsRoot.innerHTML = `<p class="aig-dr-error">${escapeHtml(error.message)}</p>`;
+            scheduleRunsPolling(false);
         } finally {
             refreshButton.disabled = false;
         }
@@ -421,9 +559,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: collectFormData(),
             });
-            formStatus.textContent = 'Research started.';
+            formStatus.textContent = i18n.researchStarted || 'Research started.';
             resetResearchForm();
-            await loadRuns();
+            await loadRuns(true);
         } catch (error) {
             formStatus.textContent = error.message;
         }
@@ -449,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sourceUrlInput.value = '';
             sourceAuthorizationInput.value = '';
             sourceActiveInput.checked = true;
-            sourceStatus.textContent = 'Source saved.';
+            sourceStatus.textContent = i18n.sourceSaved || 'Source saved.';
             await loadSources();
         } catch (error) {
             sourceStatus.textContent = error.message;
@@ -467,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
             });
             vectorStoreNameInput.value = '';
-            vectorStoreStatus.textContent = 'Vector store created.';
+            vectorStoreStatus.textContent = i18n.vectorStoreCreated || 'Vector store created.';
             await loadVectorStores();
         } catch (error) {
             vectorStoreStatus.textContent = error.message;
@@ -605,11 +743,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadRuns();
             }
 
-            if (button.classList.contains('aig-dr-run-cancel')) {
+            if (button.classList.contains('aig-dr-run-stop')) {
                 button.disabled = true;
-                button.textContent = i18n.cancelling || 'Cancelling…';
+                button.textContent = i18n.stopping || 'Stopping…';
                 await request(`/deep-research/runs/${runId}/cancel`, { method: 'POST' });
-                await loadRuns();
+                await loadRuns(true);
             }
 
             if (button.classList.contains('aig-dr-run-draft')) {
