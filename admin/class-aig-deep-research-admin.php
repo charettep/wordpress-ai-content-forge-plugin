@@ -75,6 +75,8 @@ class AIG_Deep_Research_Admin {
                     'researchStarted'     => __( 'Research started.', 'ai-genie' ),
                     'sourceSaved'         => __( 'Source saved.', 'ai-genie' ),
                     'vectorStoreCreated'  => __( 'Vector store created.', 'ai-genie' ),
+                    'untitledRun'         => __( 'Untitled run', 'ai-genie' ),
+                    'promptTitle'         => __( 'Prompt', 'ai-genie' ),
                 ],
             ]
         );

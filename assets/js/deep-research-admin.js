@@ -92,6 +92,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return formatNumber(value);
     }
 
+    function formatRunTimestamp(value) {
+        if (!value) {
+            return '';
+        }
+
+        const normalized = String(value).replace(' ', 'T');
+        const date = new Date(normalized.endsWith('Z') ? normalized : `${normalized}Z`);
+
+        if (Number.isNaN(date.getTime())) {
+            return String(value);
+        }
+
+        return date.toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    }
+
     function getToolLabel(type) {
         const labels = {
             web_search_call: 'Web Search',
@@ -462,6 +483,17 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    function renderPromptPanel(run) {
+        return `
+            <details class="aig-dr-prompt-panel">
+                <summary>
+                    <strong>${escapeHtml(i18n.promptTitle || 'Prompt')}</strong>
+                </summary>
+                <div class="aig-dr-prompt-body">${escapeHtml(run.prompt || '')}</div>
+            </details>
+        `;
+    }
+
     function renderRuns(runs) {
         if (!Array.isArray(runs) || runs.length === 0) {
             runsRoot.innerHTML = `<p class="description">${escapeHtml(i18n.noRuns || 'No Deep Research runs yet.')}</p>`;
@@ -475,37 +507,45 @@ document.addEventListener('DOMContentLoaded', () => {
             const annotations = Array.isArray(run.report_annotations) ? run.report_annotations : [];
             const itemSummary = Array.isArray(run.items) ? run.items.map((item) => item.type).join(', ') : '';
             const draftLinks = run.draft_post_id ? `<p><strong>Draft:</strong> #${run.draft_post_id}</p>` : '';
+            const title = run.title || run.prompt || (i18n.untitledRun || 'Untitled run');
+            const startedAt = formatRunTimestamp(run.created_at);
 
             return `
-                <article class="aig-dr-run-card" data-run-id="${run.id}">
-                    <div class="aig-dr-run-head">
-                        <div>
-                            <h3>${escapeHtml(run.title || run.prompt || 'Untitled run')}</h3>
-                            <p class="aig-dr-meta">
-                                <span>${escapeHtml(run.model || '')}</span>
-                                <span>${escapeHtml(run.status || '')}</span>
-                                <span>${escapeHtml(run.response_status || '')}</span>
-                            </p>
+                <details class="aig-dr-run-card" data-run-id="${run.id}">
+                    <summary class="aig-dr-run-summary">
+                        <span class="aig-dr-run-summary-time">${escapeHtml(startedAt)}</span>
+                        <strong class="aig-dr-run-summary-title">${escapeHtml(title)}</strong>
+                    </summary>
+                    <div class="aig-dr-run-body">
+                        <div class="aig-dr-run-head">
+                            <div>
+                                <h3>${escapeHtml(title)}</h3>
+                                <p class="aig-dr-meta">
+                                    <span>${escapeHtml(run.model || '')}</span>
+                                    <span>${escapeHtml(run.status || '')}</span>
+                                    <span>${escapeHtml(run.response_status || '')}</span>
+                                </p>
+                            </div>
+                            <div class="aig-dr-run-actions">
+                                <button type="button" class="button aig-dr-run-refresh">${escapeHtml(i18n.refresh || 'Refresh')}</button>
+                                <button type="button" class="button aig-dr-run-stop" ${run.can_stop ? '' : 'disabled'}>${escapeHtml(i18n.stop || 'Stop')}</button>
+                                <button type="button" class="button aig-dr-run-draft" data-post-type="post" ${run.report_message ? '' : 'disabled'}>${escapeHtml(i18n.createPostDraft || 'Create Post Draft')}</button>
+                                <button type="button" class="button aig-dr-run-draft" data-post-type="page" ${run.report_message ? '' : 'disabled'}>${escapeHtml(i18n.createPageDraft || 'Create Page Draft')}</button>
+                            </div>
                         </div>
-                        <div class="aig-dr-run-actions">
-                            <button type="button" class="button aig-dr-run-refresh">${escapeHtml(i18n.refresh || 'Refresh')}</button>
-                            <button type="button" class="button aig-dr-run-stop" ${run.can_stop ? '' : 'disabled'}>${escapeHtml(i18n.stop || 'Stop')}</button>
-                            <button type="button" class="button aig-dr-run-draft" data-post-type="post" ${run.report_message ? '' : 'disabled'}>${escapeHtml(i18n.createPostDraft || 'Create Post Draft')}</button>
-                            <button type="button" class="button aig-dr-run-draft" data-post-type="page" ${run.report_message ? '' : 'disabled'}>${escapeHtml(i18n.createPageDraft || 'Create Page Draft')}</button>
+                        ${renderProgressPanel(run)}
+                        <div class="aig-dr-run-stats">
+                            ${renderUsagePanel(run)}
+                            ${renderToolsPanel(run)}
                         </div>
+                        ${renderPromptPanel(run)}
+                        <p><strong>Tool trace:</strong> ${escapeHtml(itemSummary || 'None yet')}</p>
+                        <p><strong>Citations:</strong> ${annotations.length}</p>
+                        ${draftLinks}
+                        <div class="aig-dr-report">${escapeHtml(run.report_message || (i18n.noReport || 'No final report yet.'))}</div>
+                        ${run.last_error ? `<p class="aig-dr-error"><strong>Error:</strong> ${escapeHtml(run.last_error)}</p>` : ''}
                     </div>
-                    ${renderProgressPanel(run)}
-                    <div class="aig-dr-run-stats">
-                        ${renderUsagePanel(run)}
-                        ${renderToolsPanel(run)}
-                    </div>
-                    <p><strong>Prompt:</strong> ${escapeHtml(run.prompt || '')}</p>
-                    <p><strong>Tool trace:</strong> ${escapeHtml(itemSummary || 'None yet')}</p>
-                    <p><strong>Citations:</strong> ${annotations.length}</p>
-                    ${draftLinks}
-                    <div class="aig-dr-report">${escapeHtml(run.report_message || (i18n.noReport || 'No final report yet.'))}</div>
-                    ${run.last_error ? `<p class="aig-dr-error"><strong>Error:</strong> ${escapeHtml(run.last_error)}</p>` : ''}
-                </article>
+                </details>
             `;
         }).join('');
 

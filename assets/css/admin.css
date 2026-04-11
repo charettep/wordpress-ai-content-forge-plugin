@@ -924,13 +924,19 @@
 }
 
 .aig-dr-source-card,
-.aig-dr-run-card,
 .aig-dr-managed-card,
 .aig-dr-webhook-card {
     border: 1px solid var(--aig-border);
     border-radius: var(--aig-radius);
     background: var(--aig-bg-subtle);
     padding: 16px;
+}
+
+.aig-dr-run-card {
+    border: 1px solid var(--aig-border);
+    border-radius: var(--aig-radius);
+    background: var(--aig-bg-subtle);
+    overflow: hidden;
 }
 
 .aig-dr-actions,
@@ -994,6 +1000,39 @@
     padding: 12px;
     white-space: pre-wrap;
     line-height: 1.55;
+}
+
+.aig-dr-run-summary {
+    list-style: none;
+    cursor: pointer;
+    display: grid;
+    gap: 6px;
+    padding: 16px;
+    background: #fff;
+}
+
+.aig-dr-run-summary::-webkit-details-marker {
+    display: none;
+}
+
+.aig-dr-run-summary-time {
+    color: var(--aig-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.aig-dr-run-summary-title {
+    color: var(--aig-primary);
+    font-size: 16px;
+    line-height: 1.35;
+}
+
+.aig-dr-run-body {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border-top: 1px solid var(--aig-border);
 }
 
 .aig-dr-progress-card,
@@ -1110,6 +1149,35 @@
     font-size: 11px;
 }
 
+.aig-dr-prompt-panel {
+    border: 1px solid var(--aig-border);
+    border-radius: 10px;
+    background: #fff;
+}
+
+.aig-dr-prompt-panel summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px;
+    font-weight: 700;
+    color: var(--aig-primary);
+}
+
+.aig-dr-prompt-panel summary::-webkit-details-marker {
+    display: none;
+}
+
+.aig-dr-prompt-body {
+    padding: 0 14px 14px;
+    white-space: pre-wrap;
+    line-height: 1.55;
+    color: var(--aig-text-body);
+}
+
 .aig-dr-error {
     color: var(--aig-error);
 }
@@ -1130,7 +1198,8 @@
 
     .aig-dr-progress-head,
     .aig-dr-usage-head,
-    .aig-dr-tools-panel summary {
+    .aig-dr-tools-panel summary,
+    .aig-dr-prompt-panel summary {
         align-items: flex-start;
     }
 }

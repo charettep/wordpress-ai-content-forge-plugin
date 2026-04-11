@@ -16,7 +16,7 @@ AI Genie is a WordPress plugin for generating editorial content with Anthropic C
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, model discovery, and Deep Research run management
 
-The current packaged release is `v3.3.2`.
+The current packaged release is `v3.3.3`.
 
 ## Features
 
@@ -35,6 +35,7 @@ The current packaged release is `v3.3.2`.
 - Optional Deep Research webhook callback endpoint for background run reconciliation
 - Deep Research run monitoring cards with live-updating token usage, tool-call summaries, and estimated progress
 - Deep Research `Stop` action for queued and in-progress stored responses using the Responses API cancel endpoint
+- Deep Research `Runs` view uses collapsed run accordions by default, with nested collapsible prompt sections
 - `Create post draft` and `Create page draft` actions from completed Deep Research reports
 - Choose a global default provider
 - Override the provider per generation run directly from the fixed Gutenberg header
@@ -98,7 +99,7 @@ Live usage notes:
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-genie-v3.3.2.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-genie-v3.3.3.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -216,6 +217,7 @@ Open `AI Genie -> Deep Research` in wp-admin to run long-form OpenAI research jo
 - Draft publishing: create a WordPress `post` or `page` draft directly from a completed report
 - Run monitoring: each run card shows token usage, tool-call breakdowns, and estimated progress while active
 - Stop control: background or otherwise stored active responses can be stopped from wp-admin through the OpenAI Responses cancel endpoint
+- Runs UI: each run is collapsed by default and expands on demand; the prompt also lives inside its own collapsed panel within the expanded run
 
 Current implementation notes:
 
