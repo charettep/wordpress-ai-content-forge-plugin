@@ -11,6 +11,7 @@ class AIG_Updater {
     private const ERROR_TTL    = 15 * MINUTE_IN_SECONDS;
 
     public static function init(): void {
+        add_filter( 'site_transient_update_plugins', [ self::class, 'inject_update_data' ] );
         add_filter( 'pre_set_site_transient_update_plugins', [ self::class, 'inject_update_data' ] );
         add_filter( 'plugins_api', [ self::class, 'filter_plugin_info' ], 10, 3 );
     }
@@ -29,28 +30,36 @@ class AIG_Updater {
         $plugin_file = plugin_basename( AIG_PLUGIN_FILE );
         $release     = self::get_latest_release();
 
-        if ( ! $release || empty( $release['version'] ) || version_compare( $release['version'], AIG_VERSION, '<=' ) ) {
-            if ( isset( $transient->response[ $plugin_file ] ) ) {
-                unset( $transient->response[ $plugin_file ] );
-            }
-
-            return $transient;
-        }
-
         if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
             $transient->response = [];
         }
 
-        $transient->response[ $plugin_file ] = (object) [
-            'id'          => 'https://github.com/' . self::GITHUB_OWNER . '/' . self::GITHUB_REPO,
-            'slug'        => self::PLUGIN_SLUG,
-            'plugin'      => $plugin_file,
-            'new_version' => $release['version'],
-            'url'         => 'https://github.com/' . self::GITHUB_OWNER . '/' . self::GITHUB_REPO,
-            'package'     => $release['package_url'],
-            'requires'    => '6.4',
+        if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+            $transient->no_update = [];
+        }
+
+        if ( ! $release || empty( $release['version'] ) ) {
+            return $transient;
+        }
+
+        $update = (object) [
+            'id'           => 'https://github.com/' . self::GITHUB_OWNER . '/' . self::GITHUB_REPO,
+            'slug'         => self::PLUGIN_SLUG,
+            'plugin'       => $plugin_file,
+            'new_version'  => $release['version'],
+            'url'          => 'https://github.com/' . self::GITHUB_OWNER . '/' . self::GITHUB_REPO,
+            'package'      => $release['package_url'],
+            'requires'     => '6.4',
             'requires_php' => '8.1',
         ];
+
+        unset( $transient->response[ $plugin_file ], $transient->no_update[ $plugin_file ] );
+
+        if ( version_compare( $release['version'], AIG_VERSION, '>' ) ) {
+            $transient->response[ $plugin_file ] = $update;
+        } else {
+            $transient->no_update[ $plugin_file ] = $update;
+        }
 
         return $transient;
     }
