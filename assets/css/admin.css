@@ -157,20 +157,78 @@
 
 .aig-tab-panel[aria-hidden="false"] { display: block; }
 
-/* Cross-tab link inside provider card */
+/* Cross-page link inside Ollama provider card */
 .aig-provider-footer-link {
     margin: 12px 0 0;
     font-size: 13px;
     color: var(--aig-muted);
 }
 
-.aig-provider-footer-link .aig-tab-link {
+.aig-provider-footer-link a {
     color: var(--aig-primary);
     font-weight: 600;
     text-decoration: none;
 }
 
-.aig-provider-footer-link .aig-tab-link:hover { text-decoration: underline; }
+.aig-provider-footer-link a:hover { text-decoration: underline; }
+
+/* ── Collapsible provider cards ─────────────────────────────────────────── */
+.aig-provider-collapsible {
+    padding: 0; /* override .aig-card default; spacing is per section below */
+    cursor: default;
+}
+
+.aig-provider-summary {
+    padding: 16px 22px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    border-radius: calc(var(--aig-radius) - 1px);
+    transition: background .15s;
+    margin-bottom: 0; /* override .aig-provider-header */
+}
+
+/* Remove native disclosure triangle in all browsers */
+.aig-provider-summary::-webkit-details-marker { display: none; }
+.aig-provider-summary::marker { display: none; }
+
+.aig-provider-summary:hover { background: var(--aig-bg-hover); }
+
+.aig-provider-collapsible[open] > .aig-provider-summary {
+    border-bottom: 1px solid var(--aig-border);
+    border-radius: calc(var(--aig-radius) - 1px) calc(var(--aig-radius) - 1px) 0 0;
+    background: var(--aig-bg-subtle);
+}
+
+/* h2 inside a summary is a label, not a section heading — strip the decorative underline */
+.aig-provider-summary h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    font-size: 1rem;
+}
+
+/* Chevron: sits at the far right of the flex row */
+.aig-provider-chevron {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--aig-muted);
+    transition: transform .2s;
+    line-height: 1;
+}
+
+.aig-provider-chevron::before { content: "▼"; }
+
+.aig-provider-collapsible[open] > .aig-provider-summary .aig-provider-chevron {
+    transform: rotate(180deg);
+}
+
+.aig-provider-body {
+    padding: 6px 22px 20px;
+}
+
+.aig-provider-body > .form-table:first-child { margin-top: 8px; }
 
 /* ── Sticky save footer ─────────────────────────────────────────────────── */
 .aig-save-footer {

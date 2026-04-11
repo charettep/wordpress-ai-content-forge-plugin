@@ -222,36 +222,51 @@ PROMPT,
     }
 
     public static function sanitize( array $input ): array {
-        $clean = self::defaults();
+        // Start from the currently persisted values so that a partial form
+        // submission (e.g. "AI Providers" page only) does not erase fields
+        // that belong to a different settings page (e.g. prompt templates).
+        $current = self::all();
+        $clean   = $current;
 
-        if ( isset( $input['default_provider'] ) && in_array( $input['default_provider'], self::PROVIDERS, true ) ) {
-            $clean['default_provider'] = $input['default_provider'];
+        // Each sub-page injects a hidden _aig_form_section field so we know
+        // which block of settings was actually submitted.
+        $section          = sanitize_key( $input['_aig_form_section'] ?? 'all' );
+        $apply_providers  = in_array( $section, [ 'providers', 'all' ], true );
+        $apply_prompts    = in_array( $section, [ 'prompts',   'all' ], true );
+
+        if ( $apply_providers ) {
+            if ( isset( $input['default_provider'] ) && in_array( $input['default_provider'], self::PROVIDERS, true ) ) {
+                $clean['default_provider'] = $input['default_provider'];
+            }
+            $clean['claude_api_key']  = sanitize_text_field( $input['claude_api_key'] ?? '' );
+            $clean['claude_model']    = '' === $clean['claude_api_key']
+                ? ''
+                : sanitize_text_field( $input['claude_model'] ?? '' );
+            $clean['openai_api_key']  = sanitize_text_field( $input['openai_api_key'] ?? '' );
+            $clean['openai_model']    = '' === $clean['openai_api_key']
+                ? ''
+                : sanitize_text_field( $input['openai_model'] ?? '' );
+            $clean['ollama_url']      = esc_url_raw( $input['ollama_url'] ?? 'http://localhost:11434' );
+            $clean['ollama_auth_header_name'] = sanitize_text_field( $input['ollama_auth_header_name'] ?? '' );
+            $clean['ollama_auth_header_value'] = sanitize_text_field( $input['ollama_auth_header_value'] ?? '' );
+            $clean['ollama_model']    = '' === $clean['ollama_url']
+                ? ''
+                : sanitize_text_field( $input['ollama_model'] ?? '' );
+            $legacy_max_tokens          = absint( $input['max_tokens'] ?? ( $current['max_tokens'] ?? 15000 ) );
+            $clean['max_output_tokens'] = absint( $input['max_output_tokens'] ?? $legacy_max_tokens );
+            $clean['max_thinking_tokens'] = absint( $input['max_thinking_tokens'] ?? ( $current['max_thinking_tokens'] ?? 15000 ) );
+            $clean['max_tokens']        = $clean['max_output_tokens'];
+            $clean['temperature']       = min( 2.0, max( 0.0, (float) ( $input['temperature'] ?? ( $current['temperature'] ?? 0.7 ) ) ) );
         }
-        $clean['claude_api_key']  = sanitize_text_field( $input['claude_api_key'] ?? '' );
-        $clean['claude_model']    = '' === $clean['claude_api_key']
-            ? ''
-            : sanitize_text_field( $input['claude_model'] ?? '' );
-        $clean['openai_api_key']  = sanitize_text_field( $input['openai_api_key'] ?? '' );
-        $clean['openai_model']    = '' === $clean['openai_api_key']
-            ? ''
-            : sanitize_text_field( $input['openai_model'] ?? '' );
-        $clean['ollama_url']      = esc_url_raw( $input['ollama_url'] ?? 'http://localhost:11434' );
-        $clean['ollama_auth_header_name'] = sanitize_text_field( $input['ollama_auth_header_name'] ?? '' );
-        $clean['ollama_auth_header_value'] = sanitize_text_field( $input['ollama_auth_header_value'] ?? '' );
-        $clean['ollama_model']    = '' === $clean['ollama_url']
-            ? ''
-            : sanitize_text_field( $input['ollama_model'] ?? '' );
-        $legacy_max_tokens          = absint( $input['max_tokens'] ?? 15000 );
-        $clean['max_output_tokens'] = absint( $input['max_output_tokens'] ?? $legacy_max_tokens );
-        $clean['max_thinking_tokens'] = absint( $input['max_thinking_tokens'] ?? 15000 );
-        $clean['max_tokens']        = $clean['max_output_tokens'];
-        $clean['temperature']       = min( 2.0, max( 0.0, (float) ( $input['temperature'] ?? 0.7 ) ) );
 
-        foreach ( self::prompt_defaults() as $type => $default_template ) {
-            $key      = self::prompt_setting_key( $type );
-            $template = self::normalize_prompt_template( (string) ( $input[ $key ] ?? $default_template ) );
+        if ( $apply_prompts ) {
+            foreach ( self::prompt_defaults() as $type => $default_template ) {
+                $key      = self::prompt_setting_key( $type );
+                $saved    = $current[ $key ] ?? $default_template;
+                $template = self::normalize_prompt_template( (string) ( $input[ $key ] ?? $saved ) );
 
-            $clean[ $key ] = '' === $template ? $default_template : $template;
+                $clean[ $key ] = '' === $template ? $default_template : $template;
+            }
         }
 
         self::$cache = [];  // bust cache on save

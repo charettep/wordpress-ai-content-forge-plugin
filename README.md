@@ -17,7 +17,7 @@ AI Genie is a WordPress plugin for generating editorial content with Anthropic C
 - REST endpoints for generation, provider status, model discovery, and Deep Research run management
 - native WordPress update checks and auto-updates backed by GitHub Releases
 
-The current packaged release is `v3.4.2`.
+The current packaged release is `v3.4.3`.
 
 ## Features
 
@@ -755,6 +755,13 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v3.4.3`
+
+- Split the single tabbed settings page into three separate wp-admin submenu pages: **AI Providers**, **Prompts**, and **Help** (renamed from Ollama Setup)
+- Provider cards on the AI Providers page are now collapsible — collapsed by default, showing only the provider logo, name, and live connection status; click to expand the API key and model fields
+- Fixed a data-loss bug in `AIG_Settings::sanitize()` where saving from one settings sub-page (e.g. Providers) would silently reset fields owned by another page (e.g. custom prompt templates) back to factory defaults; each form now includes a `_aig_form_section` sentinel so only the submitted section is rewritten
+- Updated the cross-reference link in the Ollama provider card from a tab-switch anchor to a direct link to the new Help page
 
 ### `v3.4.2`
 
