@@ -330,7 +330,7 @@ class AIG_Deep_Research_Admin {
             ];
         }
 
-        $cache_key = 'aig_dr_openai_status_' . md5( $api_key );
+        $cache_key = 'aig_dr_openai_status_v2_' . md5( $api_key );
         $cached = get_transient( $cache_key );
 
         if ( is_array( $cached ) ) {
@@ -355,11 +355,11 @@ class AIG_Deep_Research_Admin {
             );
 
             $status['connected'] = true;
-            $status['models']['o4-mini-deep-research'] = in_array( 'o4-mini-deep-research', $model_ids, true );
-            $status['models']['o3-deep-research'] = in_array( 'o3-deep-research', $model_ids, true );
+            $status['models']['o4-mini-deep-research'] = self::model_family_is_available( 'o4-mini-deep-research', $model_ids, $provider );
+            $status['models']['o3-deep-research'] = self::model_family_is_available( 'o3-deep-research', $model_ids, $provider );
 
             if ( ! $status['models']['o4-mini-deep-research'] || ! $status['models']['o3-deep-research'] ) {
-                $status['message'] = __( 'The API key is valid, but one or both Deep Research models are not exposed for this account right now.', 'ai-genie' );
+                $status['message'] = __( 'The API key is valid, but one or both Deep Research models could not be confirmed from the Models API checks.', 'ai-genie' );
             }
         } catch ( \Throwable $e ) {
             $status['message'] = $e->getMessage();
@@ -368,5 +368,29 @@ class AIG_Deep_Research_Admin {
         set_transient( $cache_key, $status, 5 * MINUTE_IN_SECONDS );
 
         return $status;
+    }
+
+    private static function model_family_is_available( string $canonical_model, array $model_ids, $provider ): bool {
+        foreach ( $model_ids as $model_id ) {
+            $model_id = (string) $model_id;
+
+            if ( self::matches_model_family( $canonical_model, $model_id ) ) {
+                return true;
+            }
+        }
+
+        if ( is_object( $provider ) && method_exists( $provider, 'is_model_available' ) ) {
+            return (bool) $provider->is_model_available( $canonical_model );
+        }
+
+        return false;
+    }
+
+    private static function matches_model_family( string $canonical_model, string $candidate_model ): bool {
+        if ( $canonical_model === $candidate_model ) {
+            return true;
+        }
+
+        return str_starts_with( $candidate_model, $canonical_model . '-' );
     }
 }

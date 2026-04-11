@@ -62,6 +62,32 @@ class AIG_Provider_OpenAI extends AIG_Provider {
         return array_values( $models );
     }
 
+    public function is_model_available( string $model, array $config = [] ): bool {
+        $api_key = trim( (string) $this->resolve_setting( 'openai_api_key', '', $config ) );
+        $model   = trim( $model );
+
+        if ( '' === $api_key ) {
+            throw new RuntimeException( 'OpenAI API key is not set.' );
+        }
+
+        if ( '' === $model ) {
+            return false;
+        }
+
+        try {
+            $this->http_get(
+                self::MODELS_API_URL . '/' . rawurlencode( $model ),
+                [
+                    'Authorization' => 'Bearer ' . $api_key,
+                ]
+            );
+
+            return true;
+        } catch ( \Throwable $e ) {
+            return false;
+        }
+    }
+
     public function generate( string $prompt, int $max_output_tokens, float $temperature, int $max_thinking_tokens = 0 ): string {
         if ( ! $this->is_configured() ) {
             throw new RuntimeException( 'OpenAI API key is not set.' );

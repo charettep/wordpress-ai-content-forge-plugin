@@ -16,7 +16,7 @@ AI Genie is a WordPress plugin for generating editorial content with Anthropic C
 - a Gutenberg sidebar for on-demand generation inside the block editor
 - REST endpoints for generation, provider status, model discovery, and Deep Research run management
 
-The current packaged release is `v3.3.0`.
+The current packaged release is `v3.3.1`.
 
 ## Features
 
@@ -96,7 +96,7 @@ Live usage notes:
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-genie-v3.3.0.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-genie-v3.3.1.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -741,6 +741,13 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v3.3.1`
+
+- fixed the Deep Research status card so deep research model availability is no longer limited to exact `GET /v1/models` string matches
+- added support for confirming deep research model families from dated and variant IDs such as `o3-deep-research-...` and `o4-mini-deep-research-...`
+- added a direct `GET /v1/models/{model}` fallback probe so the status card can confirm canonical deep research models even when they are not surfaced in the list response
+- rotated the Deep Research OpenAI status cache key so stale false negatives from `v3.3.0` do not linger after update
 
 ### `v3.1.4`
 
