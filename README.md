@@ -1,7 +1,7 @@
 # AI Genie
 
 <p align="center">
-  <img src="images/plugin-icon.png" alt="AI Genie mascot" width="128" height="128">
+  <img src="images/plugin-icon.png" alt="Magic lamp AI Genie icon" width="128" height="128">
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@ AI Genie is a WordPress plugin for generating editorial content with Anthropic C
 - REST endpoints for generation, provider status, model discovery, and Deep Research run management
 - native WordPress update checks and auto-updates backed by GitHub Releases
 
-The current packaged release is `v3.3.6`.
+The current packaged release is `v3.3.8`.
 
 ## Features
 
@@ -102,7 +102,7 @@ Live usage notes:
 
 Use the packaged zip if you just want to install the plugin in WordPress.
 
-1. Download the latest versioned package such as `ai-genie-v3.3.6.zip` from the latest GitHub release.
+1. Download the latest versioned package such as `ai-genie-v3.3.8.zip` from the latest GitHub release.
 2. In WordPress admin, go to `Plugins -> Add Plugin -> Upload Plugin`.
 3. Upload the versioned plugin archive.
 4. Click `Install Now`, then `Activate Plugin`.
@@ -755,6 +755,10 @@ If OpenAI, Claude, or Ollama connects successfully, the provider header will sho
 `Apply to Post` uses Gutenberg's raw HTML conversion pipeline. If output still lands in a `Custom HTML` block, the generated markup likely contains structures Gutenberg cannot safely convert into native blocks.
 
 ## Changelog
+
+### `v3.3.8`
+
+- bumped `basic-ftp` dev dependency from `5.2.0` to `5.2.2` in the Gutenberg build toolchain to resolve two high-severity CRLF injection vulnerabilities (CVE: GHSA-chqc-8p9q-pq6q and related incomplete-fix advisory); this package is not shipped in the plugin zip and has no runtime impact
 
 ### `v3.3.1`
 
